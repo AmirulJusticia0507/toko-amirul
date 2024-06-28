@@ -73,6 +73,12 @@ $usersid = isset($_SESSION['usersid']) ? $_SESSION['usersid'] : '';
                 </a>
             </li>
             <li class="nav-item">
+                <a href="customerproducts.php?page=customerproducts" class="nav-link <?php echo isPageActive('customerproducts'); ?>">
+                    <i class="fa fa-users nav-icon"></i>
+                    <p>Customer</p>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="cart.php?page=cart" class="nav-link <?php echo isPageActive('cart'); ?>">
                     <i class="fa fa-cart-shopping nav-icon"></i>
                     <p>Cart</p>

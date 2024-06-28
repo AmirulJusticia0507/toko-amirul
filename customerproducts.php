@@ -8,6 +8,13 @@ if (!isset($_SESSION['userid'])) {
     header('Location: login.php');
     exit;
 }
+
+// Retrieve product details from database
+$sql = "SELECT p.product_name, p.description, p.price, p.stock_quantity, c.category_name, b.brand_name
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN brands b ON p.brand_id = b.brand_id";
+$result = $koneklocalhost->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -15,7 +22,7 @@ if (!isset($_SESSION['userid'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>Keranjang - Toko Amirul</title>
+    <title>Customer - Toko Amirul</title>
     <!-- Tambahkan link Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.5.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Tambahkan link AdminLTE CSS -->
@@ -107,13 +114,46 @@ if (!isset($_SESSION['userid'])) {
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="index.php?page=dashboard">Home</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Keranjang</li>
+                        <li class="breadcrumb-item active" aria-current="page">Customer</li>
                     </ol>
                 </nav>
                 <?php
                 include 'navigation.php';
                 ?>
 
+                <div class="row">
+                    <?php
+                    // Loop through each product and display card
+                    if ($result->num_rows > 0) {
+                        while ($row = $result->fetch_assoc()) {
+                            echo '<div class="col-12 col-sm-6 col-md-4">
+                                    <div class="card product-card">
+                                        <div class="card-header text-muted border-bottom-0">
+                                            ' . $row['product_name'] . '
+                                        </div>
+                                        <div class="card-body pt-0">
+                                            <p class="text-muted"><b>Description:</b> ' . $row['description'] . '</p>
+                                            <p class="text-muted"><b>Price:</b> $' . $row['price'] . '</p>
+                                            <p class="text-muted"><b>Stock Quantity:</b> ' . $row['stock_quantity'] . '</p>
+                                            <p class="text-muted"><b>Category:</b> ' . $row['category_name'] . '</p>
+                                            <p class="text-muted"><b>Brand:</b> ' . $row['brand_name'] . '</p>
+                                        </div>
+                                        <div class="card-footer">
+                                            <div class="text-right">
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" placeholder="Amount">
+                                                    <button class="btn btn-sm btn-primary ms-2">Add to Cart</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>';
+                        }
+                    } else {
+                        echo '<div class="col-12"><p>No products found.</p></div>';
+                    }
+                    ?>
+                </div>
             </main>
         </div>
     </div>

@@ -39,6 +39,14 @@
                                 exit;
                             }
                             break;
+                        
+                            case 'customerproducts':
+                            if ($currentPage !== 'customerproducts.php') {
+                                header("Location: customerproducts.php?page=customerproducts");
+                                exit;
+                            }
+                            break;
+
                             
                         case 'dashboard':
                             if ($currentPage !== 'index.php') {
