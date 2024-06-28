@@ -1,0 +1,18 @@
+{
+    "name": "amirul-putra-justici/m-banking",
+    "type": "phpmailer",
+    "require": {
+        "phpmailer/phpmailer": "^6.9",
+        "firebase/php-jwt": "^6.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "AmirulPutraJustici\\MBanking\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Amirul Putra Justicia"
+        }
+    ]
+}
