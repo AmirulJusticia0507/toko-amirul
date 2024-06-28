@@ -12,6 +12,12 @@ function cleanInput($input)
     return $output;
 }
 
+// Fungsi untuk menghasilkan token acak
+function generateToken($length = 32)
+{
+    return bin2hex(random_bytes($length));
+}
+
 session_start();
 
 // Periksa apakah pengguna sudah login
@@ -49,18 +55,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             date_default_timezone_set('Asia/Jakarta');
             $login_date = date('Y-m-d H:i:s');
 
-            // Update login_date ke dalam database
-            $updateQuery = "UPDATE db_toko_amirul.users SET login_date = ? WHERE userid = ?";
+            // Menghasilkan token acak
+            $token = generateToken();
+
+            // Simpan token dan update login_date ke dalam database
+            $updateQuery = "UPDATE db_toko_amirul.users SET login_date = ?, tokenize = ? WHERE userid = ?";
             $updateStmt = $koneklocalhost->prepare($updateQuery);
-            $updateStmt->bind_param("si", $login_date, $row['userid']);
+            $updateStmt->bind_param("ssi", $login_date, $token, $row['userid']);
             $updateStmt->execute();
 
-                // Menyesuaikan aliran navigasi berdasarkan peran pengguna
-                if ($row['status'] == 'Admin' || $row['status'] == 'Karyawan') {
-                    header('Location: index.php?page=dashboard'); // Ganti dengan alamat halaman admin jika peran adalah Admin
-                } else {
-                    header('Location: index.php?page=dashboard'); // Ganti dengan alamat halaman karyawan jika peran adalah Karyawan
-                }
+            // Simpan token ke dalam sesi
+            $_SESSION['token'] = $token;
+
+            // Menyesuaikan aliran navigasi berdasarkan peran pengguna
+            if ($row['status'] == 'Admin' || $row['status'] == 'Customer') {
+                header('Location: index.php?page=dashboard'); // Ganti dengan alamat halaman admin jika peran adalah Admin
+            } else {
+                header('Location: index.php?page=dashboard'); // Ganti dengan alamat halaman karyawan jika peran adalah Karyawan
+            }
             exit;
         } else {
             $error = "Invalid username or password";
@@ -71,7 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 <?php include 'title.php'; ?>
@@ -79,9 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <body>
     <div class="content">
         <div class="col-md-6" align="center">
-            <img src="img/e-absen.png" alt="Image" class="img-fluid" style="width:100%">
+            <img src="img/amirulshop.png" alt="Image" class="img-fluid" style="width:100%">
         </div>
-        <div class="text">Login <span style="color:green">SI ABSENSI</span></div>
+        <div class="text">Login <br><span style="color:green">Amirul Shop</span></div>
         <form action="#" method="post">
             <?php if (isset($error)) : ?>
                 <div class="error"><?php echo $error; ?></div>

@@ -44,7 +44,7 @@ $usersid = isset($_SESSION['usersid']) ? $_SESSION['usersid'] : '';
 <aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color: #2c3e50; color: #ecf0f1;">
     <!-- Tambahkan konten sidebar AdminLTE di sini -->
     <a href="index.php?page=dashboard" class="brand-link">
-        <center><span class="brand-text font-weight-light"> <img src="img/e-absen.png" alt="" style="width:150px;"></span></center>
+        <center><span class="brand-text font-weight-light"> <img src="img/amirulshop.png" alt="" style="width:150px;"></span></center>
     </a>
     <div class="sidebar">
         <ul class="nav nav-pills nav-sidebar flex-column nowrap" data-widget="treeview" role="menu" data-accordion="false">
@@ -61,8 +61,20 @@ $usersid = isset($_SESSION['usersid']) ? $_SESSION['usersid'] : '';
                 </a>
             </li>
             <li class="nav-item">
-                <a href="rekapdata.php?page=rekapdata" class="nav-link <?php echo isPageActive('rekapdata'); ?>">
-                    <i class="fa fa-cart nav-icon"></i>
+                <a href="categories.php?page=categories" class="nav-link <?php echo isPageActive('categories'); ?>">
+                    <i class="fa fa-list-alt nav-icon"></i>
+                    <p>Categories</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="brands.php?page=brands" class="nav-link <?php echo isPageActive('brands'); ?>">
+                    <i class="fa fa-tags nav-icon"></i>
+                    <p>Brands</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="cart.php?page=cart" class="nav-link <?php echo isPageActive('cart'); ?>">
+                    <i class="fa fa-cart-shopping nav-icon"></i>
                     <p>Cart</p>
                 </a>
             </li>
@@ -75,6 +87,7 @@ $usersid = isset($_SESSION['usersid']) ? $_SESSION['usersid'] : '';
         </ul>
     </div>
 </aside>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Skrip JavaScript untuk mengontrol pushmenu -->
 <script>
