@@ -19,6 +19,9 @@ $status = '';
 $weight = 0.0;
 $image_url = '';
 
+// Initialize action variable based on product_id presence
+$action = isset($_POST['product_id']) ? 'edit' : 'add';
+
 // Process for saving or updating products
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $product_name = cleanInput($_POST['product_name']);
@@ -229,8 +232,11 @@ function cleanInput($input) {
                                     <?php endif; ?>
                                 </div>
                             </div>
-
-                            <button type="submit" class="btn btn-primary">Save Product</button>
+                            <?php if ($action == 'edit'): ?>
+                                <button type="submit" name="update" class="btn btn-primary">Update Product</button>
+                            <?php else: ?>
+                                <button type="submit" name="simpan" class="btn btn-primary">Simpan Product</button>
+                            <?php endif; ?>
                         </form>
                     </div>
                 </div>
@@ -281,10 +287,11 @@ function cleanInput($input) {
                                             echo "<td>{$row['brand_name']}</td>";
                                             echo "<td>{$row['status']}</td>";
                                             echo "<td>";
-                                            echo "<button type='button' class='btn btn-sm btn-primary' onclick='editProduct({$row['product_id']})' title='Edit'><i class='fas fa-edit'></i></button> ";
-                                            echo "<button type='button' class='btn btn-sm btn-danger' onclick='confirmDelete({$row['product_id']})' title='Delete'><i class='fas fa-trash'></i></button>&nbsp;";
+                                            echo "<button type='button' class='btn btn-sm btn-primary' onclick='editProduct(\"{$row['product_id']}\")' title='Edit'><i class='fas fa-edit'></i></button> ";
+                                            echo "<button type='button' class='btn btn-sm btn-danger' onclick='confirmDelete(\"{$row['product_id']}\")' title='Delete'><i class='fas fa-trash'></i></button>&nbsp;";
                                             echo "<a href='showdetailsproduct.php?product_id={$row['product_id']}' class='btn btn-sm btn-info' title='Details' target='_blank'><i class='fas fa-eye'></i></a>";
                                             echo "</td>";
+                                            
                                             echo "</tr>";
                                         }
                                     } else {
@@ -330,7 +337,6 @@ function cleanInput($input) {
             $('#brand_id').select2();
         });
 
-        // Function to fill form fields for edit mode
         function editProduct(product_id) {
             // AJAX request to fetch product details
             $.ajax({
@@ -346,8 +352,8 @@ function cleanInput($input) {
                     $('#description').val(data.description);
                     $('#price').val(data.price);
                     $('#stock_quantity').val(data.stock_quantity);
-                    $('#category_id').val(data.category_id);
-                    $('#brand_id').val(data.brand_id);
+                    $('#category_id').val(data.category_id).trigger('change'); // Trigger change event for select2
+                    $('#brand_id').val(data.brand_id).trigger('change'); // Trigger change event for select2
                     $('#status').val(data.status);
                     $('#weight').val(data.weight);
                     // Preview product image
@@ -373,7 +379,6 @@ function cleanInput($input) {
             });
         }
 
-        // Function to confirm product deletion
         function confirmDelete(product_id) {
             Swal.fire({
                 title: 'Are you sure?',
@@ -410,8 +415,8 @@ function cleanInput($input) {
             });
         }
 
-    // Function to hide product form
-    function hideProductForm() {
+        // Function to hide product form
+        function hideProductForm() {
             $('#productForm').slideUp();
             $('#productFormTitle').text('Add New Product');
             $('#product_id').val('');

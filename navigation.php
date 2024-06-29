@@ -40,13 +40,19 @@
                             }
                             break;
                         
-                            case 'catalog':
+                        case 'catalog':
                             if ($currentPage !== 'catalog.php') {
                                 header("Location: catalog.php?page=catalog");
                                 exit;
                             }
                             break;
 
+                        case 'riwayattransaksi':
+                            if ($currentPage !== 'riwayattransaksi.php') {
+                                header("Location: riwayattransaksi.php?page=riwayattransaksi");
+                                exit;
+                            }
+                            break;
                             
                         case 'dashboard':
                             if ($currentPage !== 'index.php') {

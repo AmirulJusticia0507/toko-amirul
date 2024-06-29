@@ -8,6 +8,24 @@ if (!isset($_SESSION['userid'])) {
     header('Location: login.php');
     exit;
 }
+
+// Ambil user_id dari sesi
+$user_id = $_SESSION['userid'];
+
+// Ambil data transaksi dari database
+$query = "SELECT * FROM amirulpay_transactions WHERE user_id = ?";
+$stmt = $koneklocalhost->prepare($query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Close statement
+$stmt->close();
+
+// Function to format amount to Indonesian Rupiah
+function format_rupiah($amount) {
+    return 'Rp ' . number_format($amount, 0, ',', '.');
+}
 ?>
 
 <!DOCTYPE html>
@@ -15,7 +33,7 @@ if (!isset($_SESSION['userid'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>Dashboard - Toko Amirul</title>
+    <title>History Transaction - Toko Amirul</title>
     <!-- Tambahkan link Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.5.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Tambahkan link AdminLTE CSS -->
@@ -107,45 +125,46 @@ if (!isset($_SESSION['userid'])) {
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="index.php?page=dashboard">Home</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                        <li class="breadcrumb-item active" aria-current="page">Transaction History</li>
                     </ol>
                 </nav>
                 <?php
                 include 'navigation.php';
                 ?>
 
-                <div class="row" align="center">
-                    <div class="col-md-3 mb-3">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <i class="fas fa-user fa-3x"></i>
-                                <h5 class="card-title">Product</h5>
-                                <p class="card-text">Product Management</p>
-                                <button onclick="location.href='productmanagement.php?page=productmanagement'" class="btn btn-secondary"><i class="fas fa-user"></i> Product</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <i class="fas fa-wallet fa-3x"></i>
-                                <h5 class="card-title">Saldo</h5>
-                                <p class="card-text">Isi Saldo</p>
-                                <button onclick="location.href='saldo.php?page=saldo'" class="btn btn-danger"><i class="fas fa-wallet"></i> Isi Saldo</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <i class="fas fa-file-alt fa-3x"></i>
-                                <h5 class="card-title">History</h5>
-                                <p class="card-text">Lihat Riwayat Pesanan</p>
-                                <button onclick="location.href='cart.php?page=cart'" class="btn btn-success"><i class="fas fa-file-alt"></i> Pesanan Saya</button>
-                            </div>
-                        </div>
-                    </div><hr><br>
+                <!-- Timeline -->
+                <div class="timeline">
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                        <div class="timeline-item">
+                            <span class="timeline-date"><?= date('d M Y H:i:s', strtotime($row['transaction_date'])) ?></span>
+                            <h3 class="timeline-title"><?= $row['payment_method'] ?></h3>
+                            <div class="timeline-body">
+                                <p>Amount: <?= format_rupiah($row['amount']) ?></p>
+                                <p>Status: <?= $row['status'] ?></p>
 
+                                <?php if ($row['status'] == 'Dikemas' && empty($row['tanggalpengemasan'])): ?>
+                                    <!-- Form untuk input tanggal pengemasan -->
+                                    <form method="post">
+                                        <div class="mb-3">
+                                            <label for="tanggalpengemasan">Tanggal Pengemasan:</label>
+                                            <input type="date" class="form-control" id="tanggalpengemasan" name="tanggalpengemasan">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Simpan</button>
+                                    </form>
+                                <?php elseif ($row['status'] == 'Dikirim' && empty($row['tanggalpengiriman'])): ?>
+                                    <!-- Form untuk input tanggal pengiriman -->
+                                    <form method="post">
+                                        <div class="mb-3">
+                                            <label for="tanggalpengiriman">Tanggal Pengiriman:</label>
+                                            <input type="date" class="form-control" id="tanggalpengiriman" name="tanggalpengiriman">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Simpan</button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                </div>
             </main>
         </div>
     </div>
@@ -168,6 +187,32 @@ if (!isset($_SESSION['userid'])) {
             });
         });
     </script>
+<?php
+// Handle form submission for tanggalpengemasan and tanggalpengiriman
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (isset($_POST['tanggalpengemasan'])) {
+        $tanggalpengemasan = $_POST['tanggalpengemasan'];
+        $user_id = $_SESSION['userid'];
+
+        // Update tanggalpengemasan in users table or related transaction table
+        $update_query = "UPDATE users SET tanggalpengemasan = ? WHERE user_id = ?";
+        $stmt = $koneklocalhost->prepare($update_query);
+        $stmt->bind_param("si", $tanggalpengemasan, $user_id);
+        $stmt->execute();
+        $stmt->close();
+    } elseif (isset($_POST['tanggalpengiriman'])) {
+        $tanggalpengiriman = $_POST['tanggalpengiriman'];
+        $user_id = $_SESSION['userid'];
+
+        // Update tanggalpengiriman in users table or related transaction table
+        $update_query = "UPDATE users SET tanggalpengiriman = ? WHERE user_id = ?";
+        $stmt = $koneklocalhost->prepare($update_query);
+        $stmt->bind_param("si", $tanggalpengiriman, $user_id);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+?>
 
 </body>
 </html>

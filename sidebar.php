@@ -85,6 +85,12 @@ $usersid = isset($_SESSION['usersid']) ? $_SESSION['usersid'] : '';
                 </a>
             </li>
             <li class="nav-item">
+                <a href="riwayattransaksi.php?page=riwayattransaksi" class="nav-link <?php echo isPageActive('riwayattransaksi'); ?>">
+                    <i class="fa fa-history nav-icon"></i>
+                    <p>History Transaction</p>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="#" class="nav-link logout-link">
                     <i class="fas fa-sign-out-alt nav-icon"></i>
                     <p>Logout</p>

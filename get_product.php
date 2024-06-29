@@ -1,27 +1,43 @@
 <?php
-// Sambungkan ke database
+// Include your database connection file
 include 'konekke_local.php';
 
-// Ambil product_id dari POST data
-$product_id = $_POST['product_id'];
+// Check if product_id is sent via POST
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['product_id'])) {
+    // Sanitize the input (optional but recommended)
+    $product_id = intval($_POST['product_id']);
 
-// Query untuk mengambil detail produk dengan parameterized query
-$query = "SELECT * FROM products WHERE product_id = ?";
-$stmt = $koneklocalhost->prepare($query);
-$stmt->bind_param("s", $product_id);
-$stmt->execute();
-$result = $stmt->get_result();
+    // Prepare SQL statement to fetch product details
+    $query = "SELECT * FROM products WHERE product_id = ?";
+    $stmt = $koneklocalhost->prepare($query);
 
-if ($result->num_rows > 0) {
-    // Jika produk ditemukan, kirim data dalam format JSON
-    $row = $result->fetch_assoc();
-    echo json_encode($row);
+    // Bind product_id parameter
+    $stmt->bind_param("i", $product_id);
+
+    // Execute the statement
+    $stmt->execute();
+
+    // Get result set
+    $result = $stmt->get_result();
+
+    // Check if product exists
+    if ($result->num_rows > 0) {
+        // Fetch product details
+        $row = $result->fetch_assoc();
+        // Return product details as JSON response
+        echo json_encode($row);
+    } else {
+        // Product not found error
+        echo json_encode(['error' => 'Product not found']);
+    }
 } else {
-    // Jika produk tidak ditemukan, kirim respons kosong
-    echo json_encode([]);
+    // Invalid request error
+    echo json_encode(['error' => 'Invalid request']);
 }
 
-// Tutup statement dan koneksi
+// Close the statement
 $stmt->close();
+
+// Close the database connection
 $koneklocalhost->close();
 ?>
