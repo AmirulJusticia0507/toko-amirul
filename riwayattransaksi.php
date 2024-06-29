@@ -102,6 +102,118 @@ function format_rupiah($amount) {
             padding: 5px;
             height: 150px;
         }
+    </style>
+    <style>
+        /* CSS untuk Timeline */
+.timeline {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.timeline::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    background-color: white;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    margin-left: -3px;
+}
+
+.container {
+    padding: 10px 40px;
+    position: relative;
+    background-color: inherit;
+    width: 50%;
+}
+
+.container::after {
+    content: '';
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    right: -17px;
+    background-color: white;
+    border: 4px solid #FF9F55;
+    top: 15px;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.left {
+    left: 0;
+}
+
+.right {
+    left: 50%;
+}
+
+.left::before {
+    content: " ";
+    height: 0;
+    position: absolute;
+    top: 22px;
+    width: 0;
+    z-index: 1;
+    right: 30px;
+    border: medium solid white;
+    border-width: 10px 0 10px 10px;
+    border-color: transparent transparent transparent white;
+}
+
+.right::before {
+    content: " ";
+    height: 0;
+    position: absolute;
+    top: 22px;
+    width: 0;
+    z-index: 1;
+    left: 30px;
+    border: medium solid white;
+    border-width: 10px 10px 10px 0;
+    border-color: transparent white transparent transparent;
+}
+
+.right::after {
+    left: -16px;
+}
+
+.content {
+    padding: 20px 30px;
+    background-color: white;
+    position: relative;
+    border-radius: 6px;
+}
+
+/* Responsive timeline */
+@media screen and (max-width: 600px) {
+    .timeline::after {
+        left: 31px;
+    }
+
+    .container {
+        width: 100%;
+        padding-left: 70px;
+        padding-right: 25px;
+    }
+
+    .container::before {
+        left: 60px;
+        border: medium solid white;
+        border-width: 10px 10px 10px 0;
+        border-color: transparent white transparent transparent;
+    }
+
+    .left::after, .right::after {
+        left: 15px;
+    }
+
+    .right {
+        left: 0%;
+    }
+}
 
     </style>
 </head>
@@ -135,10 +247,10 @@ function format_rupiah($amount) {
                 <!-- Timeline -->
                 <div class="timeline">
                     <?php while ($row = $result->fetch_assoc()): ?>
-                        <div class="timeline-item">
-                            <span class="timeline-date"><?= date('d M Y H:i:s', strtotime($row['transaction_date'])) ?></span>
-                            <h3 class="timeline-title"><?= $row['payment_method'] ?></h3>
-                            <div class="timeline-body">
+                        <div class="container left">
+                            <div class="content">
+                                <span class="timeline-date"><?= date('d M Y H:i:s', strtotime($row['transaction_date'])) ?></span>
+                                <h2><?= $row['payment_method'] ?></h2>
                                 <p>Amount: <?= format_rupiah($row['amount']) ?></p>
                                 <p>Status: <?= $row['status'] ?></p>
 
@@ -165,6 +277,7 @@ function format_rupiah($amount) {
                         </div>
                     <?php endwhile; ?>
                 </div>
+
             </main>
         </div>
     </div>
