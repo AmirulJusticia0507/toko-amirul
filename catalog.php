@@ -114,7 +114,7 @@ $result = $koneklocalhost->query($sql);
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="index.php?page=dashboard">Home</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Customer</li>
+                        <li class="breadcrumb-item active" aria-current="page">Catalog</li>
                     </ol>
                 </nav>
                 <?php

@@ -1,199 +1,176 @@
 <?php
 include 'konekke_local.php';
 
-// Periksa apakah pengguna telah terautentikasi
+// Check if user is authenticated
 session_start();
 if (!isset($_SESSION['userid'])) {
-    // Jika tidak ada sesi pengguna, alihkan ke halaman login
     header('Location: login.php');
     exit;
 }
 
-// Ambil product_id dari URL parameter
+// Retrieve product_id from URL parameter (make sure it's an integer)
 if (isset($_GET['product_id'])) {
     $product_id = $_GET['product_id'];
 
-    // Lakukan query ke database untuk mendapatkan detail produk berdasarkan $product_id
-    $query = "SELECT * FROM products WHERE product_id = $product_id";
-    $result = $koneklocalhost->query($query);
+    // Prepare the SQL statement using a prepared statement with JOINs
+    $query = "SELECT p.*, c.category_name, b.brand_name
+              FROM products p
+              LEFT JOIN categories c ON p.category_id = c.category_id
+              LEFT JOIN brands b ON p.brand_id = b.brand_id
+              WHERE p.product_id = ?";
+    $stmt = $koneklocalhost->prepare($query);
 
-    if ($result) {
-        if ($result->num_rows > 0) {
-            // Ambil data produk
-            $row = $result->fetch_assoc();
-?>
+    // Bind the parameter to the statement
+    $stmt->bind_param("s", $product_id); // Assuming product_id is a string
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>Dashboard - Toko Amirul</title>
-    <!-- Tambahkan link Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.5.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Tambahkan link AdminLTE CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/css/adminlte.min.css">
-    <!-- Tambahkan link DataTables CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="checkbox.css">
-    <!-- Sertakan CSS Select2 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-<!-- <link rel="stylesheet" href="uploadfoto.css"> -->
-    <link rel="icon" href="img/amirulshop.png" type="image/png">
-    <style>
-        /* Tambahkan CSS agar tombol accordion terlihat dengan baik */
-        .btn-link {
-            text-decoration: none;
-            color: #007bff; /* Warna teks tombol */
-        }
+    // Execute the statement
+    $stmt->execute();
 
-        .btn-link:hover {
-            text-decoration: underline;
-        }
+    // Get the result
+    $result = $stmt->get_result();
 
-        .card-header {
-            background-color: #f7f7f7; /* Warna latar belakang header card */
-        }
+    // Check if there's a row returned
+    if ($result->num_rows > 0) {
+        // Fetch product data
+        $row = $result->fetch_assoc();
 
-        #notification {
-            display: none;
-            margin-top: 10px; /* Adjust this value based on your layout */
-            padding: 10px;
-            border: 1px solid #ccc;
-            background-color: #f8f8f8;
-            color: #333;
-        }
-    </style>
-    <style>
-        .myButtonCekSaldo {
-            box-shadow: 3px 4px 0px 0px #899599;
-            background:linear-gradient(to bottom, #ededed 5%, #bab1ba 100%);
-            background-color:#ededed;
-            border-radius:15px;
-            border:1px solid #d6bcd6;
-            display:inline-block;
-            cursor:pointer;
-            color:#3a8a9e;
-            font-family:Arial;
-            font-size:17px;
-            padding:7px 25px;
-            text-decoration:none;
-            text-shadow:0px 1px 0px #e1e2ed;
-        }
-        .myButtonCekSaldo:hover {
-            background:linear-gradient(to bottom, #bab1ba 5%, #ededed 100%);
-            background-color:#bab1ba;
-        }
-        .myButtonCekSaldo:active {
-            position:relative;
-            top:1px;
-        }
+        // Check if keys exist before accessing
+        $product_name = isset($row['product_name']) ? htmlspecialchars($row['product_name']) : 'N/A';
+        $description = isset($row['description']) ? htmlspecialchars($row['description']) : 'N/A';
+        $price = isset($row['price']) ? number_format($row['price'], 0, ',', '.') : 'N/A';
+        $stock_quantity = isset($row['stock_quantity']) ? $row['stock_quantity'] : 'N/A';
+        $category_name = isset($row['category_name']) ? htmlspecialchars($row['category_name']) : 'N/A';
+        $brand_name = isset($row['brand_name']) ? htmlspecialchars($row['brand_name']) : 'N/A';
+        $status = isset($row['status']) ? htmlspecialchars($row['status']) : 'N/A';
+        $weight = isset($row['weight']) ? $row['weight'] . ' kg' : 'N/A';
+        $product_image = isset($row['product_image']) ? $row['product_image'] : '';
 
-        #imagePreview img {
-            margin-right: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            padding: 5px;
-            height: 150px;
-        }
-
-    </style>
-</head>
-
-<body class="hold-transition sidebar-mini">
-    <div class="wrapper">
-        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
-                </li>
-            </ul>
-            <?php include 'header.php'; ?>
-        </nav>
-        
-        <?php include 'sidebar.php'; ?>
-
-        <div class="content-wrapper">
-            <!-- Konten Utama -->
-            <main class="content">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="index.php?page=dashboard">Home</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Detail Produk</li>
-                    </ol>
+        // Start HTML output
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Product Details - Toko Amirul</title>
+            <!-- Include your CSS links -->
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.5.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/css/adminlte.min.css">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+            <!-- Additional CSS styles -->
+            <link rel="icon" href="img/amirulshop.png" type="image/png">
+            <style>
+                /* Custom styles */
+                .content-wrapper {
+                    min-height: 100vh;
+                }
+            </style>
+        </head>
+        <body class="hold-transition sidebar-mini">
+            <div class="wrapper">
+                <!-- Navbar -->
+                <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                        </li>
+                    </ul>
+                    <!-- Include header -->
+                    <?php include 'header.php'; ?>
                 </nav>
-                <?php
-                include 'navigation.php';
-                ?>
+                
+                <!-- Sidebar -->
+                <?php include 'sidebar.php'; ?>
 
-            <!-- Main content -->
-            <section class="content">
-                <div class="card card-solid">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-12 col-sm-6">
-                                <h3 class="d-inline-block d-sm-none"><?= htmlspecialchars($row['product_name']) ?> Review</h3>
-                                <div class="col-12">
-                                    <!-- Ganti sumber gambar sesuai dengan struktur direktori Anda atau URL gambar dari database -->
-                                    <img src="<?= htmlspecialchars($row['image_url']) ?>" class="product-image" alt="Product Image">
+                <!-- Main content -->
+                <div class="content-wrapper">
+                    <main class="content">
+                        <!-- Breadcrumb -->
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="index.php?page=dashboard">Home</a></li>
+                                <li class="breadcrumb-item"><a href="productmanagement.php?page=productmanagement">Product Management</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">Product Details - <?php echo $product_name; ?></li>
+                            </ol>
+                        </nav>
+
+                        <?php include 'navigation.php'; ?>
+
+                        <!-- Product details card -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h3 class="card-title">Product Details - <?php echo $product_name; ?></h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <?php if (!empty($product_image)): ?>
+                                            <img src="uploads/product/<?php echo htmlspecialchars($product_image); ?>" alt="Product Image" class="img-fluid img-thumbnail">
+                                        <?php else: ?>
+                                            <p>No image available</p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <h5><?php echo $product_name; ?></h5>
+                                        <p><strong>Description:</strong> <?php echo $description; ?></p>
+                                        <p><strong>Price:</strong> Rp <?php echo $price; ?></p>
+                                        <p><strong>Stock Quantity:</strong> <?php echo $stock_quantity; ?></p>
+                                        <p><strong>Category:</strong> <?php echo $category_name; ?></p>
+                                        <p><strong>Brand:</strong> <?php echo $brand_name; ?></p>
+                                        <p><strong>Status:</strong> <?php echo $status; ?></p>
+                                        <p><strong>Weight:</strong> <?php echo $weight; ?></p>
+
+                                        <!-- Add to Cart and Wishlist buttons -->
+                                        <div class="row mt-4">
+                                            <form action="cart.php" method="post">
+                                                <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
+                                                <button type="submit" name="add_to_cart" class="btn btn-primary btn-lg btn-flat">
+                                                    <i class="fas fa-cart-plus fa-lg mr-2"></i>
+                                                    Add to Cart
+                                                </button>
+                                            </form>&emsp;
+
+                                            <form action="wishlist.php" method="post">
+                                                <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
+                                                <button type="submit" name="add_to_wishlist" class="btn btn-default btn-lg btn-flat">
+                                                    <i class="fas fa-heart fa-lg mr-2"></i>
+                                                    Add to Wishlist
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-12 col-sm-6">
-                                <h3 class="my-3"><?= htmlspecialchars($row['product_name']) ?></h3>
-                                <p><?= htmlspecialchars($row['description']) ?></p>
-                                <p>Harga: Rp <?= number_format($row['price'], 0, ',', '.') ?></p>
-                                <p>Stok: <?= $row['stock_quantity'] ?></p>
-                                <!-- Tambahkan informasi produk lainnya sesuai kebutuhan -->
-
-                                <!-- Contoh tampilan atribut tambahan (dimensi, berat, dll.) -->
-                                <p>Dimensi: <?= htmlspecialchars($row['dimensions']) ?></p>
-                                <p>Berat: <?= $row['weight'] ?> kg</p>
-                            </div>
                         </div>
-                    </div>
+                    </main>
                 </div>
-            </section>
-        <!-- /.content-wrapper -->
+                
+                <!-- Include footer -->
+                <?php include 'footer.php'; ?>
+            </div>
 
-            </main>
-        </div>
-    </div>
-<?php include 'footer.php'; ?>
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.2/umd/popper.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/js/adminlte.min.js"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-<!-- Tambahkan Select2 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Tambahkan event click pada tombol pushmenu
-            $('.nav-link[data-widget="pushmenu"]').on('click', function() {
-                // Toggle class 'sidebar-collapse' pada elemen body
-                $('body').toggleClass('sidebar-collapse');
-            });
-        });
-    </script>
+            <!-- Include your JavaScript links -->
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.5.0/dist/js/bootstrap.min.js"></script>
+            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/js/adminlte.min.js"></script>
 
-</body>
-</html>
-<?php
-        } else {
-            echo "Produk tidak ditemukan.";
-        }
+            <!-- Your custom scripts -->
+            <script>
+                $(document).ready(function() {
+                    // Toggle sidebar collapse
+                    $('.nav-link[data-widget="pushmenu"]').on('click', function() {
+                        $('body').toggleClass('sidebar-collapse');
+                    });
+                });
+            </script>
+        </body>
+        </html>
+        <?php
     } else {
-        echo "Error: " . $koneklocalhost->error;
+        echo "<p>No product found.</p>";
     }
-
-    // Tutup koneksi database
-    $koneklocalhost->close();
-
 } else {
-    // Jika product_id tidak ada dalam URL, lakukan penanganan kesalahan atau redirect
-    echo "Produk tidak ditemukan.";
+    echo "<p>Product ID not specified.</p>";
 }
 ?>

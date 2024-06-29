@@ -1,18 +1,26 @@
 <?php
-// Periksa apakah pengguna telah terautentikasi
 session_start();
 if (!isset($_SESSION['userid'])) {
-    // Jika tidak ada sesi pengguna, alihkan ke halaman login
     header('Location: login.php');
     exit;
 }
-// Ambil nama lengkap pengguna dari sesi
-$namalengkap = isset($_SESSION['namalengkap']) ? $_SESSION['namalengkap'] : '';
+
 include 'konekke_local.php';
 
-// Proses untuk menyimpan atau mengupdate produk
+// Initialize variables
+$product_id = '';
+$product_name = '';
+$description = '';
+$price = 0.0;
+$stock_quantity = 0;
+$category_id = '';
+$brand_id = '';
+$status = '';
+$weight = 0.0;
+$image_url = '';
+
+// Process for saving or updating products
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $product_id = isset($_POST['product_id']) ? $_POST['product_id'] : '';
     $product_name = cleanInput($_POST['product_name']);
     $description = cleanInput($_POST['description']);
     $price = cleanInput($_POST['price']);
@@ -21,39 +29,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $brand_id = cleanInput($_POST['brand_id']);
     $status = cleanInput($_POST['status']);
     $weight = cleanInput($_POST['weight']);
-    $dimensions = cleanInput($_POST['dimensions']);
-    $sku = cleanInput($_POST['sku']);
+    $product_id = cleanInput($_POST['product_id']); // Added for edit mode
 
     // Handle file upload
-    $image_path = ''; // Initialize empty image path
     if ($_FILES['product_image']['size'] > 0) {
-        $target_dir = "uploads/product/"; // Directory where images will be uploaded
+        $target_dir = "uploads/product/";
         $target_file = $target_dir . basename($_FILES["product_image"]["name"]);
         $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
-
-        // Valid file extensions
         $extensions_arr = array("jpg", "jpeg", "png", "gif");
 
-        // Check extension
         if (in_array($imageFileType, $extensions_arr)) {
-            // Upload file
             move_uploaded_file($_FILES['product_image']['tmp_name'], $target_file);
-            $image_path = $target_file;
+            $image_url = basename($_FILES["product_image"]["name"]);
         } else {
             $error = "Invalid file format. Allowed formats: JPG, JPEG, PNG, GIF.";
         }
     }
 
+    // Update product if product_id is provided (edit mode)
     if (!empty($product_id)) {
-        // Update produk jika product_id ada
-        $query = "UPDATE products SET product_name=?, description=?, price=?, stock_quantity=?, category_id=?, brand_id=?, image_url=?, status=?, weight=?, dimensions=?, sku=? WHERE product_id=?";
+        $query = "UPDATE products SET product_name=?, description=?, price=?, stock_quantity=?, category_id=?, brand_id=?, product_image=?, status=?, weight=? WHERE product_id=?";
         $stmt = $koneklocalhost->prepare($query);
-        $stmt->bind_param("ssdiiisssds", $product_name, $description, $price, $stock_quantity, $category_id, $brand_id, $image_path, $status, $weight, $dimensions, $sku, $product_id);
+        $stmt->bind_param("sssiiissssi", $product_name, $description, $price, $stock_quantity, $category_id, $brand_id, $image_url, $status, $weight, $product_id);
     } else {
-        // Tambahkan produk baru jika product_id kosong
-        $query = "INSERT INTO products (product_name, description, price, stock_quantity, category_id, brand_id, image_url, status, weight, dimensions, sku) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // Generate unique product_id for new product
+        $product_id = 'P' . date('YmdHis');
+
+        // Insert new product
+        $query = "INSERT INTO products (product_id, product_name, description, price, stock_quantity, category_id, brand_id, product_image, status, weight) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $koneklocalhost->prepare($query);
-        $stmt->bind_param("ssdiiisssds", $product_name, $description, $price, $stock_quantity, $category_id, $brand_id, $image_path, $status, $weight, $dimensions, $sku);
+        $stmt->bind_param("sssiiissss", $product_id, $product_name, $description, $price, $stock_quantity, $category_id, $brand_id, $image_url, $status, $weight);
     }
 
     if ($stmt->execute()) {
@@ -61,16 +66,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header('Location: productmanagement.php');
         exit;
     } else {
-        $error = "Error saving product";
+        $error = "Error saving product: " . $stmt->error;
     }
 }
 
+// Function to clean input data
 function cleanInput($input) {
     $search = array(
-        '@<script[^>]*?>.*?</script>@si',   // Hapus script
-        '@<[\/\!]*?[^<>]*?>@si',            // Hapus tag HTML
-        '@<style[^>]*?>.*?</style>@siU',    // Hapus style tag
-        '@<![\s\S]*?--[ \t\n\r]*>@'         // Hapus komentar
+        '@<script[^>]*?>.*?</script>@si', // Remove JavaScript
+        '@<[\/\!]*?[^ <>]*?>@si', // Remove HTML tags
+        '@<style[^>]*?>.*?</style>@siU', // Remove style tags
+        '@<![ \t\n\r]*--[ \t\n\r]*>@' // Remove comments
     );
     $output = preg_replace($search, '', $input);
     return $output;
@@ -93,6 +99,7 @@ function cleanInput($input) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Sertakan CSS Select2 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css">
     <!-- Tambahkan CSS kustom -->
     <link rel="icon" href="img/amirulshop.png" type="image/png">
     <style>
@@ -131,90 +138,41 @@ function cleanInput($input) {
                         <li class="breadcrumb-item active" aria-current="page">Product Management</li>
                     </ol>
                 </nav>
-                <?php
-                include 'navigation.php';
-                ?>
-
-                <!-- Tombol tambah produk -->
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <a href="#" class="btn btn-info" onclick="showProductForm(null)"><i class="fas fa-plus"></i> Add New Product</a>
-                    </div>
-                </div>
-
-                <!-- Tabel daftar produk -->
-                <div class="row">
-                    <div class="col-md-12">
-                        <table class="display table table-bordered table-striped table-hover responsive nowrap" style="width:100%" id="productsTable">
-                            <thead>
-                                <tr>
-                                    <th>Product ID</th>
-                                    <th>Product Name</th>
-                                    <th>Description</th>
-                                    <th>Price</th>
-                                    <th>Stock Quantity</th>
-                                    <th>Category</th>
-                                    <th>Brand</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php
-                                $query = "SELECT p.*, c.category_name, b.brand_name FROM products p 
-                                          JOIN categories c ON p.category_id = c.category_id 
-                                          JOIN brands b ON p.brand_id = b.brand_id";
-                                $result = $koneklocalhost->query($query);
-                                while ($row = $result->fetch_assoc()) {
-                                    echo "<tr>";
-                                    echo "<td>{$row['product_id']}</td>";
-                                    echo "<td>{$row['product_name']}</td>";
-                                    echo "<td>{$row['description']}</td>";
-                                    echo "<td>{$row['price']}</td>";
-                                    echo "<td>{$row['stock_quantity']}</td>";
-                                    echo "<td>{$row['category_name']}</td>";
-                                    echo "<td>{$row['brand_name']}</td>";
-                                    echo "<td>
-                                            <a href='#' class='btn btn-info btn-sm' onclick='showProductForm({$row['product_id']})'>Edit</a>
-                                            <a href='#' class='btn btn-danger btn-sm' onclick='deleteProduct({$row['product_id']})'>Delete</a>
-                                            <a href='showdetailsproduct?product_id={$row['product_id']}' class='btn btn-primary btn-sm'>Show Details</a>
-                                          </td>";
-                                    echo "</tr>";
-                                }
-                                ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <?php include 'navigation.php'; ?>
 
                 <!-- Form tambah/edit produk -->
-                <div id="productFormContainer" style="display: none;">
-                    <form id="productForm" class="card">
-                        <div class="card-header">
-                            <h3 class="card-title" id="productFormTitle">Add New Product</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" onclick="hideProductForm()">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title" id="productFormTitle">Add New Product</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" onclick="hideProductForm()">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
-                        <div class="card-body">
-                            <input type="hidden" id="product_id" name="product_id">
+                    </div>
+                    <div class="card-body">
+                        <form id="productForm" action="" method="post" enctype="multipart/form-data">
+                            <input type="hidden" id="product_id" name="product_id" value="<?php echo isset($product_id) ? $product_id : ''; ?>">
                             <div class="form-group">
                                 <label for="product_name">Product Name</label>
-                                <input type="text" class="form-control" id="product_name" name="product_name" required>
+                                <input type="text" class="form-control" id="product_name" name="product_name" value="<?php echo isset($product_name) ? $product_name : ''; ?>" required>
                             </div>
+
                             <div class="form-group">
                                 <label for="description">Description</label>
-                                <textarea class="form-control" id="description" name="description" required></textarea>
+                                <textarea class="form-control" id="description" name="description" required><?php echo isset($description) ? $description : ''; ?></textarea>
                             </div>
+
                             <div class="form-group">
                                 <label for="price">Price</label>
-                                <input type="number" class="form-control" id="price" name="price" step="0.01" required>
+                                <input type="number" class="form-control" id="price" name="price" step="0.01" value="<?php echo isset($price) ? $price : ''; ?>" required>
                             </div>
+
                             <div class="form-group">
                                 <label for="stock_quantity">Stock Quantity</label>
-                                <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" required>
+                                <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" value="<?php echo isset($stock_quantity) ? $stock_quantity : ''; ?>" required>
                             </div>
+
                             <div class="form-group">
                                 <label for="category_id">Category</label>
                                 <select class="form-control" id="category_id" name="category_id" required>
@@ -223,11 +181,13 @@ function cleanInput($input) {
                                     $query = "SELECT * FROM categories";
                                     $result = $koneklocalhost->query($query);
                                     while ($row = $result->fetch_assoc()) {
-                                        echo "<option value='{$row['category_id']}'>{$row['category_name']}</option>";
+                                        $selected = isset($category_id) && $category_id == $row['category_id'] ? 'selected' : '';
+                                        echo "<option value='{$row['category_id']}' $selected>{$row['category_name']}</option>";
                                     }
                                     ?>
                                 </select>
                             </div>
+
                             <div class="form-group">
                                 <label for="brand_id">Brand</label>
                                 <select class="form-control" id="brand_id" name="brand_id" required>
@@ -236,69 +196,249 @@ function cleanInput($input) {
                                     $query = "SELECT * FROM brands";
                                     $result = $koneklocalhost->query($query);
                                     while ($row = $result->fetch_assoc()) {
-                                        echo "<option value='{$row['brand_id']}'>{$row['brand_name']}</option>";
+                                        $selected = isset($brand_id) && $brand_id == $row['brand_id'] ? 'selected' : '';
+                                        echo "<option value='{$row['brand_id']}' $selected>{$row['brand_name']}</option>";
                                     }
                                     ?>
                                 </select>
                             </div>
-                            <div class="form-group">
-                                <label for="image_url">Image URL</label>
-                                <input type="url" class="form-control" id="image_url" name="image_url">
-                            </div>
-                            <div class="form-group">
-                                <label for="product_image">Product Image</label>
-                                <input type="file" class="form-control-file" id="product_image" name="product_image" onchange="previewImage(event)">
-                                <!-- Tambahkan elemen img untuk preview -->
-                                <img id="preview" src="#" alt="Preview" style="max-width: 200px; margin-top: 10px; display: none;">
-                            </div>
+
                             <div class="form-group">
                                 <label for="status">Status</label>
                                 <select class="form-control" id="status" name="status" required>
-                                    <option value="1">Active</option>
-                                    <option value="0">Inactive</option>
+                                    <option value="available" <?php echo isset($status) && $status == 'available' ? 'selected' : ''; ?>>Available</option>
+                                    <option value="out of stock" <?php echo isset($status) && $status == 'out of stock' ? 'selected' : ''; ?>>Out of Stock</option>
+                                    <option value="discontinued" <?php echo isset($status) && $status == 'discontinued' ? 'selected' : ''; ?>>Discontinued</option>
                                 </select>
                             </div>
+
                             <div class="form-group">
                                 <label for="weight">Weight (kg)</label>
-                                <input type="number" class="form-control" id="weight" name="weight" step="0.01">
+                                <input type="number" class="form-control" id="weight" name="weight" step="0.01" value="<?php echo isset($weight) ? $weight : ''; ?>" required>
                             </div>
+
                             <div class="form-group">
-                                <label for="dimensions">Dimensions (LxWxH in cm)</label>
-                                <input type="text" class="form-control" id="dimensions" name="dimensions">
+                                <label for="product_image">Product Image</label>
+                                <input type="file" class="form-control-file" id="product_image" name="product_image" onchange="previewImage(this)">
+                                <small class="form-text text-muted">Accepted formats: JPG, JPEG, PNG</small>
+                                <div id="imagePreview" class="mt-2">
+                                    <?php if (!empty($product_image)): ?>
+                                        <img src="uploads/product/<?php echo $product_image; ?>" alt="Product Image Preview" style="max-width: 200px; max-height: 200px;">
+                                    <?php else: ?>
+                                        <p>No image uploaded</p>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="sku">SKU</label>
-                                <input type="text" class="form-control" id="sku" name="sku" >
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i> Save Product</button>
-                            <button type="button" class="btn btn-danger float-right" onclick="resetForm()"><i class="fas fa-power-off"></i> Reset</button>
-                        </div>
-                    </form>
+
+                            <button type="submit" class="btn btn-primary">Save Product</button>
+                        </form>
+                    </div>
                 </div>
-            </main>
-        </div>
+                    <!-- Tampilkan produk dalam tabel -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h3 class="card-title">Products List</h3>
+                        </div>
+                        <div class="card-body">
+                                <table id="productTable" class="display table table-bordered table-striped table-hover responsive nowrap" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Product Name</th>
+                                            <th>Photo Product</th>
+                                            <th>Description</th>
+                                            <th>Price</th>
+                                            <th>Stock Quantity</th>
+                                            <th>Category</th>
+                                            <th>Brand</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                <tbody>
+                                <?php
+                                    $query = "SELECT p.product_id, p.product_name, p.description, p.price, p.stock_quantity, c.category_name, b.brand_name, p.status, p.product_image FROM products p LEFT JOIN categories c ON p.category_id = c.category_id LEFT JOIN brands b ON p.brand_id = b.brand_id ORDER BY p.product_id DESC";
+                                    $result = $koneklocalhost->query($query);
+                                    if ($result->num_rows > 0) {
+                                        while ($row = $result->fetch_assoc()) {
+                                            echo "<tr>";
+                                            echo "<td>{$row['product_id']}</td>";
+                                            echo "<td>{$row['product_name']}</td>";
+                                            echo "<td>";
+                                            if (!empty($row['product_image'])) {
+                                                $photoPath = "uploads/product/{$row['product_image']}";
+                                                echo "<a href='{$photoPath}' data-fancybox='gallery'>";
+                                                echo "<img src='{$photoPath}' alt='Product Image' style='max-width: 100px; max-height: 100px;' class='img-thumbnail'>";
+                                                echo "</a>";
+                                            } else {
+                                                echo "No photo available";
+                                            }
+                                            echo "</td>";
+                                            echo "<td>{$row['description']}</td>";
+                                            echo "<td>" . number_format($row['price'], 0, ',', '.') . "</td>";
+                                            echo "<td>{$row['stock_quantity']}</td>";
+                                            echo "<td>{$row['category_name']}</td>";
+                                            echo "<td>{$row['brand_name']}</td>";
+                                            echo "<td>{$row['status']}</td>";
+                                            echo "<td>";
+                                            echo "<button type='button' class='btn btn-sm btn-primary' onclick='editProduct({$row['product_id']})' title='Edit'><i class='fas fa-edit'></i></button> ";
+                                            echo "<button type='button' class='btn btn-sm btn-danger' onclick='confirmDelete({$row['product_id']})' title='Delete'><i class='fas fa-trash'></i></button>&nbsp;";
+                                            echo "<a href='showdetailsproduct.php?product_id={$row['product_id']}' class='btn btn-sm btn-info' title='Details' target='_blank'><i class='fas fa-eye'></i></a>";
+                                            echo "</td>";
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='9' class='text-center'>No products found</td></tr>";
+                                    }
+                                ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </main>
+            </div>
+            <!-- Footer -->
+    <?php include 'footer.php'; ?>
+</div>
 
-        <!-- Footer -->
-        <?php include 'footer.php'; ?>
-    </div>
+<!-- Tambahkan script JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.5.0/dist/js/bootstrap.min.js"></script>
+<!-- Sertakan jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Tambahkan AdminLTE JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/js/adminlte.min.js"></script>
+<!-- Sertakan DataTables JS -->
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+<!-- Sertakan Select2 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            // Inisialisasi DataTable
+            $('#productTable').DataTable({
+                responsive: true,
+                scrollX: true,
+                searching: true,
+                lengthMenu: [10, 25, 50, 100, 500, 1000],
+                pageLength: 10,
+                dom: 'lBfrtip'
+            });
+            // Inisialisasi Select2 untuk pilihan kategori dan merek
+            $('#category_id').select2();
+            $('#brand_id').select2();
+        });
 
-    <!-- Sertakan JavaScript -->
-    <!-- Tambahkan jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <!-- Tambahkan Bootstrap Bundle JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.5.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Sertakan AdminLTE JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/js/adminlte.min.js"></script>
-    <!-- Sertakan DataTables JS -->
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <!-- Sertakan Select2 JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.2/umd/popper.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-    <!-- Sertakan skrip kustom -->
+        // Function to fill form fields for edit mode
+        function editProduct(product_id) {
+            // AJAX request to fetch product details
+            $.ajax({
+                url: 'fetch_product.php',
+                type: 'post',
+                data: { product_id: product_id },
+                dataType: 'json',
+                success: function(data) {
+                    // Fill form fields with fetched data
+                    $('#productFormTitle').text('Edit Product');
+                    $('#product_id').val(data.product_id);
+                    $('#product_name').val(data.product_name);
+                    $('#description').val(data.description);
+                    $('#price').val(data.price);
+                    $('#stock_quantity').val(data.stock_quantity);
+                    $('#category_id').val(data.category_id);
+                    $('#brand_id').val(data.brand_id);
+                    $('#status').val(data.status);
+                    $('#weight').val(data.weight);
+                    // Preview product image
+                    if (data.product_image !== '') {
+                        $('#imagePreview').html('<img src="uploads/product/' + data.product_image + '" alt="Product Image Preview" style="max-width: 200px; max-height: 200px;">');
+                    } else {
+                        $('#imagePreview').html('<p>No image uploaded</p>');
+                    }
+                    // Show the form
+                    $('#productForm').slideDown();
+                    // Scroll to the form
+                    $('html, body').animate({
+                        scrollTop: $("#productForm").offset().top
+                    }, 1000);
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire(
+                        'Error!',
+                        'Failed to fetch product details.',
+                        'error'
+                    );
+                }
+            });
+        }
+
+        // Function to confirm product deletion
+        function confirmDelete(product_id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'You are about to delete this product.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: 'delete_product.php',
+                        type: 'post',
+                        data: { product_id: product_id },
+                        success: function(response) {
+                            Swal.fire(
+                                'Deleted!',
+                                'Your product has been deleted.',
+                                'success'
+                            ).then(() => {
+                                window.location.reload(); // Reload page after deletion
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            Swal.fire(
+                                'Error!',
+                                'Failed to delete product.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        }
+
+    // Function to hide product form
+    function hideProductForm() {
+            $('#productForm').slideUp();
+            $('#productFormTitle').text('Add New Product');
+            $('#product_id').val('');
+            $('#product_name').val('');
+            $('#description').val('');
+            $('#price').val('');
+            $('#stock_quantity').val('');
+            $('#category_id').val('');
+            $('#brand_id').val('');
+            $('#status').val('');
+            $('#weight').val('');
+            $('#imagePreview').html('<p>No image uploaded</p>');
+        }
+
+        // Function to preview selected image
+        function previewImage(input) {
+            var file = input.files[0];
+            var reader = new FileReader();
+
+            reader.onload = function(e) {
+                var imagePreview = document.getElementById('imagePreview');
+                imagePreview.innerHTML = '<img src="' + e.target.result + '" alt="Product Image Preview" style="max-width: 200px; max-height: 200px;">';
+            };
+
+            reader.readAsDataURL(file);
+        }
+    </script>
     <script>
         $(document).ready(function() {
             // Tambahkan event click pada tombol pushmenu
@@ -308,104 +448,5 @@ function cleanInput($input) {
             });
         });
     </script>
-    <script>
-        $(document).ready(function() {
-            // Inisialisasi DataTables
-            $('#productsTable').DataTable();
-            // Inisialisasi Select2
-            $('#category_id').select2();
-            $('#brand_id').select2();
-        });
-
-        // Fungsi untuk menampilkan form tambah/edit produk
-        function showProductForm(product_id) {
-            // Set judul form
-            if (product_id) {
-                $('#productFormTitle').text('Edit Product');
-                $('#product_id').val(product_id);
-                // Ambil data produk untuk diedit
-                $.ajax({
-                    url: 'get_product.php',
-                    type: 'POST',
-                    data: { product_id: product_id },
-                    dataType: 'json',
-                    success: function(response) {
-                        $('#product_name').val(response.product_name);
-                        $('#description').val(response.description);
-                        $('#price').val(response.price);
-                        $('#stock_quantity').val(response.stock_quantity);
-                        $('#category_id').val(response.category_id).trigger('change');
-                        $('#brand_id').val(response.brand_id).trigger('change');
-                        $('#image_url').val(response.image_url);
-                        $('#status').val(response.status);
-                        $('#weight').val(response.weight);
-                        $('#dimensions').val(response.dimensions);
-                        $('#sku').val(response.sku);
-                        // Tampilkan form
-                        $('#productFormContainer').slideDown();
-                    },
-                    error: function(xhr, status, error) {
-                        alert('Error fetching product data');
-                    }
-                });
-            } else {
-                $('#productFormTitle').text('Add New Product');
-                // Bersihkan nilai form
-                $('#productForm')[0].reset();
-                // Tampilkan form
-                $('#productFormContainer').slideDown();
-            }
-        }
-
-        function previewImage(event) {
-            var reader = new FileReader();
-            reader.onload = function() {
-                var preview = document.getElementById('preview');
-                preview.src = reader.result;
-                preview.style.display = 'block'; // Tampilkan gambar yang dipilih
-            }
-            reader.readAsDataURL(event.target.files[0]);
-        }
-
-        // Fungsi untuk menyembunyikan form tambah/edit produk
-        function hideProductForm() {
-            $('#productFormContainer').slideUp();
-        }
-
-        // Fungsi untuk mereset form tambah/edit produk
-        function resetForm() {
-            $('#productForm')[0].reset();
-        }
-
-        // Fungsi untuk menghapus produk
-        function deleteProduct(product_id) {
-            if (confirm('Are you sure you want to delete this product?')) {
-                $.ajax({
-                    url: 'delete_product.php',
-                    type: 'POST',
-                    data: { product_id: product_id },
-                    success: function(response) {
-                        // Reload halaman setelah penghapusan
-                        location.reload();
-                    },
-                    error: function(xhr, status, error) {
-                        alert('Error deleting product');
-                    }
-                });
-            }
-        }
-    </script>
-            <script>
-                $(document).ready(function () {
-                    $('#productsTable').DataTable({
-                        responsive: true,
-                        scrollX: true,
-                        searching: true,
-                        lengthMenu: [10, 25, 50, 100, 500, 1000],
-                        pageLength: 10,
-                        dom: 'lBfrtip'
-                    });
-                });
-            </script>
 </body>
 </html>

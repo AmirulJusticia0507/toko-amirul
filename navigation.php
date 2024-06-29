@@ -40,9 +40,9 @@
                             }
                             break;
                         
-                            case 'customerproducts':
-                            if ($currentPage !== 'customerproducts.php') {
-                                header("Location: customerproducts.php?page=customerproducts");
+                            case 'catalog':
+                            if ($currentPage !== 'catalog.php') {
+                                header("Location: catalog.php?page=catalog");
                                 exit;
                             }
                             break;

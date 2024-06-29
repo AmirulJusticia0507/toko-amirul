@@ -18,32 +18,25 @@ function getCategories() {
 }
 
 // Fungsi untuk menambahkan kategori baru
-if (isset($_POST['add_category'])) {
+if (isset($_POST['save_category'])) {
     $category_name = $_POST['category_name'];
     $description = $_POST['description'];
     $current_time = date('Y-m-d H:i:s', strtotime('now')); // Mendapatkan waktu saat ini dengan format yang diinginkan
 
-    $query = "INSERT INTO categories (category_name, description, created_at, updated_at) VALUES (?, ?, ?, ?)";
-    $stmt = $koneklocalhost->prepare($query);
-    $stmt->bind_param("ssss", $category_name, $description, $current_time, $current_time);
+    if (isset($_POST['category_id']) && !empty($_POST['category_id'])) {
+        // Update kategori
+        $category_id = $_POST['category_id'];
+        $query = "UPDATE categories SET category_name=?, description=?, updated_at=? WHERE category_id=?";
+        $stmt = $koneklocalhost->prepare($query);
+        $stmt->bind_param("sssi", $category_name, $description, $current_time, $category_id);
+    } else {
+        // Tambah kategori baru
+        $query = "INSERT INTO categories (category_name, description, created_at, updated_at) VALUES (?, ?, ?, ?)";
+        $stmt = $koneklocalhost->prepare($query);
+        $stmt->bind_param("ssss", $category_name, $description, $current_time, $current_time);
+    }
+
     $stmt->execute();
-
-    header("Location: categories.php");
-    exit;
-}
-
-// Fungsi untuk mengupdate kategori
-if (isset($_POST['edit_category'])) {
-    $category_id = $_POST['edit_category_id'];
-    $category_name = $_POST['edit_category_name'];
-    $description = $_POST['edit_description'];
-    $current_time = date('Y-m-d H:i:s', strtotime('now')); // Mendapatkan waktu saat ini dengan format yang diinginkan
-
-    $query = "UPDATE categories SET category_name=?, description=?, updated_at=? WHERE category_id=?";
-    $stmt = $koneklocalhost->prepare($query);
-    $stmt->bind_param("sssi", $category_name, $description, $current_time, $category_id);
-    $stmt->execute();
-
     header("Location: categories.php");
     exit;
 }
@@ -51,12 +44,10 @@ if (isset($_POST['edit_category'])) {
 // Fungsi untuk menghapus kategori
 if (isset($_POST['delete_category'])) {
     $category_id = $_POST['delete_category_id'];
-
     $query = "DELETE FROM categories WHERE category_id=?";
     $stmt = $koneklocalhost->prepare($query);
     $stmt->bind_param("i", $category_id);
     $stmt->execute();
-
     header("Location: categories.php");
     exit;
 }
@@ -175,17 +166,34 @@ if (isset($_POST['delete_category'])) {
                                     <h3 class="card-title">Manage Categories</h3>
                                 </div>
                                 <div class="card-body">
-                                    <!-- Form untuk menambah kategori baru -->
+                                    <?php
+                                    // Jika mengedit kategori, ambil data kategori yang akan diedit
+                                    $category_id = '';
+                                    $category_name = '';
+                                    $description = '';
+                                    if (isset($_GET['edit'])) {
+                                        $category_id = $_GET['edit'];
+                                        $query = "SELECT * FROM categories WHERE category_id=?";
+                                        $stmt = $koneklocalhost->prepare($query);
+                                        $stmt->bind_param("i", $category_id);
+                                        $stmt->execute();
+                                        $result = $stmt->get_result();
+                                        $category = $result->fetch_assoc();
+                                        $category_name = $category['category_name'];
+                                        $description = $category['description'];
+                                    }
+                                    ?>
                                     <form action="" method="post">
+                                        <input type="hidden" name="category_id" value="<?php echo $category_id; ?>">
                                         <div class="mb-3">
                                             <label for="category_name" class="form-label">Category Name</label>
-                                            <input type="text" class="form-control" id="category_name" name="category_name" required>
+                                            <input type="text" class="form-control" id="category_name" name="category_name" value="<?php echo $category_name; ?>" required>
                                         </div>
                                         <div class="mb-3">
                                             <label for="description" class="form-label">Description</label>
-                                            <textarea class="form-control" id="description" name="description"></textarea>
+                                            <textarea class="form-control" id="description" name="description"><?php echo $description; ?></textarea>
                                         </div>
-                                        <button type="submit" name="add_category" class="btn btn-primary">Add Category</button>
+                                        <button type="submit" name="save_category" class="btn btn-primary">Save Category</button>
                                     </form>
                                 </div>
                             </div>
@@ -218,50 +226,21 @@ if (isset($_POST['delete_category'])) {
                                                     echo "<td>{$row['category_name']}</td>";
                                                     echo "<td>{$row['description']}</td>";
                                                     echo "<td>
-                                                            <form action='' method='post' style='display: inline;'>
+                                                            <a href='categories.php?edit={$row['category_id']}' class='btn btn-warning btn-sm' title='Edit'><i class='fas fa-pen'></i></a>
+                                                            <form method='post' action='' class='d-inline'>
                                                                 <input type='hidden' name='delete_category_id' value='{$row['category_id']}'>
-                                                                <button type='submit' name='delete_category' class='btn btn-danger btn-sm'>Delete</button>
+                                                                <button type='submit' name='delete_category' class='btn btn-danger btn-sm' title='Delete'><i class='fas fa-trash'></i></button>
                                                             </form>
-                                                            <button type='button' class='btn btn-primary btn-sm' onclick='editCategory({$row['category_id']}, `{$row['category_name']}`, `{$row['description']}`)'>Edit</button>
                                                           </td>";
                                                     echo "</tr>";
                                                 }
                                             } else {
-                                                echo "<tr><td colspan='4'>No categories found</td></tr>";
+                                                echo "<tr><td colspan='4'>No categories found.</td></tr>";
                                             }
                                             ?>
                                         </tbody>
                                     </table>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Form untuk edit kategori -->
-                    <div id="editCategoryModal" class="modal fade" tabindex="-1" role="dialog">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Edit Category</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <form action="" method="post">
-                                    <div class="modal-body">
-                                        <input type="hidden" id="edit_category_id" name="edit_category_id">
-                                        <div class="mb-3">
-                                            <label for="edit_category_name" class="form-label">Category Name</label>
-                                            <input type="text" class="form-control" id="edit_category_name" name="edit_category_name" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="edit_description" class="form-label">Description</label>
-                                            <textarea class="form-control" id="edit_description" name="edit_description"></textarea>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                        <button type="submit" name="edit_category" class="btn btn-primary">Save Changes</button>
-                                    </div>
-                                </form>
                             </div>
                         </div>
                     </div>
@@ -292,6 +271,25 @@ if (isset($_POST['delete_category'])) {
         });
     </script>
     <script>
+        function confirmDelete(categoryId) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('<form method="post">' +
+                        '<input type="hidden" name="delete_category_id" value="' + categoryId + '">' +
+                        '<input type="hidden" name="delete_category">' +
+                        '</form>').appendTo('body').submit();
+                }
+            });
+        }
+
         function editCategory(category_id, category_name, description) {
             $('#edit_category_id').val(category_id);
             $('#edit_category_name').val(category_name);
@@ -299,17 +297,17 @@ if (isset($_POST['delete_category'])) {
             $('#editCategoryModal').modal('show');
         }
     </script>
-                <script>
-                $(document).ready(function () {
-                    $('#categoriesTable').DataTable({
-                        responsive: true,
-                        scrollX: true,
-                        searching: true,
-                        lengthMenu: [10, 25, 50, 100, 500, 1000],
-                        pageLength: 10,
-                        dom: 'lBfrtip'
-                    });
-                });
-            </script>
+    <script>
+        $(document).ready(function () {
+            $('#categoriesTable').DataTable({
+                responsive: true,
+                scrollX: true,
+                searching: true,
+                lengthMenu: [10, 25, 50, 100, 500, 1000],
+                pageLength: 10,
+                dom: 'lBfrtip'
+            });
+        });
+    </script>
 </body>
 </html>

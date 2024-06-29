@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = $_POST['description'];
 
         // Insert or update query based on brand_id existence
-        if (isset($_POST['brand_id'])) {
+        if (isset($_POST['brand_id']) && !empty($_POST['brand_id'])) {
             // Update brand
             $brand_id = $_POST['brand_id'];
             $sql = "UPDATE brands SET brand_name='$brand_name', description='$description' WHERE brand_id=$brand_id";
@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 include 'navigation.php';
                 ?>
 
-                <div class="container-fluid">
+<div class="container-fluid">
                     <div class="row">
                         <div class="col-md-12">
                             <div class="card">
@@ -222,16 +222,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                             <td>' . $row['created_at'] . '</td>
                                                             <td>' . $row['updated_at'] . '</td>
                                                             <td>
-                                                                <button class="btn btn-sm btn-info edit-btn" data-id="' . $row['brand_id'] . '" data-name="' . $row['brand_name'] . '" data-desc="' . $row['description'] . '">Edit</button>
-                                                                <form method="post" action="' . $_SERVER['PHP_SELF'] . '" style="display: inline-block;">
+                                                                <button class="btn btn-sm btn-primary edit-brand" data-id="' . $row['brand_id'] . '">Edit</button>
+                                                                <form method="post" action="' . $_SERVER['PHP_SELF'] . '" style="display:inline;">
                                                                     <input type="hidden" name="brand_id" value="' . $row['brand_id'] . '">
-                                                                    <button type="submit" name="delete" class="btn btn-sm btn-danger" onclick="return confirm(\'Are you sure you want to delete this brand?\')">Delete</button>
+                                                                    <button type="submit" name="delete" class="btn btn-sm btn-danger">Delete</button>
                                                                 </form>
                                                             </td>
-                                                          </tr>';
+                                                        </tr>';
                                                 }
                                             } else {
-                                                echo '<tr><td colspan="6">No brands found</td></tr>';
+                                                echo '<tr><td colspan="6" class="text-center">No brands found</td></tr>';
                                             }
                                             ?>
                                         </tbody>
@@ -267,27 +267,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         });
     </script>
     <script>
-        // Script to handle edit button click and fill form fields
-        $('.edit-btn').click(function() {
-            var id = $(this).data('id');
-            var name = $(this).data('name');
-            var desc = $(this).data('desc');
-            $('#brand_id').val(id);
-            $('#brand_name').val(name);
-            $('#description').val(desc);
+        $(document).ready(function() {
+            $('#brandsTable').DataTable({
+                responsive: true,
+                scrollX: true,
+                searching: true,
+                lengthMenu: [10, 25, 50, 100, 500, 1000],
+                pageLength: 10,
+                dom: 'lBfrtip'
+            });
+
+            // Handle Edit button click
+            $('.edit-brand').on('click', function() {
+                var brand_id = $(this).data('id');
+
+                // Fetch brand details using AJAX
+                $.ajax({
+                    url: 'fetch_brand.php', // URL file PHP untuk mengambil data brand
+                    method: 'POST',
+                    data: { brand_id: brand_id },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response) {
+                            // Populate form fields with brand data
+                            $('#brand_name').val(response.brand_name);
+                            $('#description').val(response.description);
+                            $('#brand_id').val(response.brand_id);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
         });
     </script>
-            <script>
-                $(document).ready(function () {
-                    $('#brandsTable').DataTable({
-                        responsive: true,
-                        scrollX: true,
-                        searching: true,
-                        lengthMenu: [10, 25, 50, 100, 500, 1000],
-                        pageLength: 10,
-                        dom: 'lBfrtip'
-                    });
-                });
-            </script>
 </body>
 </html>
