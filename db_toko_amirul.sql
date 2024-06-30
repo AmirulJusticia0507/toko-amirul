@@ -97,6 +97,74 @@ insert  into `categories`(`category_id`,`category_name`,`description`,`created_a
 (4,'Pakaian Wanita','Pakaian khusus wanita','2024-06-29 08:38:11','2024-06-29 08:38:11'),
 (5,'Laptop','Perangkat Keras Komputer','2024-06-29 08:39:47','2024-06-29 08:39:47');
 
+/*Table structure for table `log_delete_brands` */
+
+DROP TABLE IF EXISTS `log_delete_brands`;
+
+CREATE TABLE `log_delete_brands` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `brand_id` int(11) NOT NULL,
+  `deleted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deleted_by` varchar(255) DEFAULT NULL,
+  `additional_info` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `brand_id` (`brand_id`),
+  CONSTRAINT `log_delete_brands_ibfk_1` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+/*Data for the table `log_delete_brands` */
+
+/*Table structure for table `log_delete_categories` */
+
+DROP TABLE IF EXISTS `log_delete_categories`;
+
+CREATE TABLE `log_delete_categories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `category_id` int(11) NOT NULL,
+  `deleted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deleted_by` varchar(255) DEFAULT NULL,
+  `additional_info` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `category_id` (`category_id`),
+  CONSTRAINT `log_delete_categories_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+/*Data for the table `log_delete_categories` */
+
+/*Table structure for table `log_delete_products` */
+
+DROP TABLE IF EXISTS `log_delete_products`;
+
+CREATE TABLE `log_delete_products` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `product_id` varchar(20) NOT NULL,
+  `deleted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deleted_by` varchar(255) DEFAULT NULL,
+  `additional_info` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `product_id` (`product_id`),
+  CONSTRAINT `log_delete_products_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+/*Data for the table `log_delete_products` */
+
+/*Table structure for table `log_delete_users` */
+
+DROP TABLE IF EXISTS `log_delete_users`;
+
+CREATE TABLE `log_delete_users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `deleted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deleted_by` varchar(255) DEFAULT NULL,
+  `additional_info` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `log_delete_users_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`userid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+/*Data for the table `log_delete_users` */
+
 /*Table structure for table `products` */
 
 DROP TABLE IF EXISTS `products`;
@@ -148,14 +216,34 @@ CREATE TABLE `users` (
   `alamat` varchar(255) DEFAULT NULL,
   `tanggalpengemasan` datetime DEFAULT NULL,
   `tanggalpengiriman` datetime DEFAULT NULL,
+  `photo_profile` varchar(255) NOT NULL,
   PRIMARY KEY (`userid`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 /*Data for the table `users` */
 
-insert  into `users`(`userid`,`username`,`password`,`fullname`,`tokenize`,`created_at`,`updated_at`,`login_date`,`logout_date`,`status`,`no_hp`,`saldo`,`alamat`,`tanggalpengemasan`,`tanggalpengiriman`) values 
-(16,'amirul007','$2y$10$uJ0clQWr2QMo9uYDY1UKE.ONUil.fcrmmQzJoos5.6AFiFw3MTgkm','Amirul Putra Justicia','a566d18a4c67f548cdf59ea55555f3aacd3e6444c756cbad62d8b57287e57e44','2024-06-28 22:53:37',NULL,'2024-06-29 13:24:05','2024-06-29 00:48:00','Admin','082134402383',1000000000,NULL,NULL,NULL);
+insert  into `users`(`userid`,`username`,`password`,`fullname`,`tokenize`,`created_at`,`updated_at`,`login_date`,`logout_date`,`status`,`no_hp`,`saldo`,`alamat`,`tanggalpengemasan`,`tanggalpengiriman`,`photo_profile`) values 
+(16,'amirul007','$2y$10$uJ0clQWr2QMo9uYDY1UKE.ONUil.fcrmmQzJoos5.6AFiFw3MTgkm','Amirul Putra Justicia','5acf120c6c819229fe868cb4d6697ae028bc0bd6621c62cb634b481042dc3129','2024-06-28 22:53:37',NULL,'2024-06-30 06:57:42','2024-06-30 09:42:36','Admin','082134402383',1000000000,NULL,NULL,NULL,'');
+
+/*Table structure for table `wishlist` */
+
+DROP TABLE IF EXISTS `wishlist`;
+
+CREATE TABLE `wishlist` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `product_id` varchar(20) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `product_id` (`product_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+/*Data for the table `wishlist` */
+
+insert  into `wishlist`(`id`,`user_id`,`product_id`,`created_at`) values 
+(6,16,'0','2024-06-30 08:36:56');
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
