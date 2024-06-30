@@ -59,23 +59,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Delete brand
     if (isset($_POST['delete'])) {
         $brand_id = $_POST['brand_id'];
-        $sql = "DELETE FROM brands WHERE brand_id=$brand_id";
 
-        if ($koneklocalhost->query($sql) === TRUE) {
-            echo '<div id="notification" class="alert alert-success alert-dismissible">
-                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                    Brand deleted successfully!
-                  </div>';
+        // Retrieve brand details before deletion
+        $querySelect = "SELECT brand_name, description FROM brands WHERE brand_id = ?";
+        $stmtSelect = $koneklocalhost->prepare($querySelect);
+        $stmtSelect->bind_param("i", $brand_id);
+        $stmtSelect->execute();
+        $stmtSelect->bind_result($brand_name, $description);
+        $stmtSelect->fetch();
+        $stmtSelect->close();
+
+        // Delete brand
+        $sqlDelete = "DELETE FROM brands WHERE brand_id=$brand_id";
+        if ($koneklocalhost->query($sqlDelete) === TRUE) {
+            // Insert into log_delete_brands
+            $deletedBy = $_SESSION['username'];
+            $additionalInfo = "Brand '$brand_name' deleted by $deletedBy";
+            $logQuery = "INSERT INTO log_delete_brands (brand_id, deleted_by, additional_info) VALUES (?, ?, ?)";
+            $stmtLog = $koneklocalhost->prepare($logQuery);
+            $stmtLog->bind_param("iss", $brand_id, $deletedBy, $additionalInfo);
+
+            if ($stmtLog->execute()) {
+                echo '<div id="notification" class="alert alert-success alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        Brand deleted successfully!
+                      </div>';
+            } else {
+                echo '<div id="notification" class="alert alert-danger alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        Error logging delete action: ' . $stmtLog->error . '
+                      </div>';
+            }
         } else {
             echo '<div id="notification" class="alert alert-danger alert-dismissible">
                     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                    Error: ' . $koneklocalhost->error . '
+                    Error deleting brand: ' . $koneklocalhost->error . '
                   </div>';
         }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>

@@ -113,7 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <button type="submit">Sign in</button>
             <div class="sign-up">
                 Not a member?
-                <a href="signup.php?page=signup">Signup now</a>
+                <!-- <a href="signup.php?page=signup">Signup now</a> -->
+                <a href="signupcustomer.php">Signup for Customer</a>
             </div>
         </form>
     </div>
