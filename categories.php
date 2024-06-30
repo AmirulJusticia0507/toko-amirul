@@ -9,6 +9,23 @@ if (!isset($_SESSION['userid'])) {
     exit;
 }
 
+// Check user role
+$user_id = $_SESSION['userid'];
+$query = "SELECT status FROM users WHERE userid = ?";
+$stmt = $koneklocalhost->prepare($query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$stmt->bind_result($user_status);
+$stmt->fetch();
+$stmt->close();
+
+// Jika status user adalah Customer, redirect atau tampilkan pesan bahwa mereka tidak memiliki akses
+if ($user_status == 'Customer') {
+    // Misalnya, alihkan ke halaman lain atau tampilkan pesan error
+    header('Location: no-access.php');
+    exit;
+}
+
 // Fungsi untuk mendapatkan semua kategori dari database
 function getCategories() {
     global $koneklocalhost;
@@ -44,12 +61,27 @@ if (isset($_POST['save_category'])) {
 // Fungsi untuk menghapus kategori
 if (isset($_POST['delete_category'])) {
     $category_id = $_POST['delete_category_id'];
-    $query = "DELETE FROM categories WHERE category_id=?";
-    $stmt = $koneklocalhost->prepare($query);
-    $stmt->bind_param("i", $category_id);
-    $stmt->execute();
-    header("Location: categories.php");
-    exit;
+    $queryDelete = "DELETE FROM categories WHERE category_id=?";
+    $stmtDelete = $koneklocalhost->prepare($queryDelete);
+    $stmtDelete->bind_param("i", $category_id);
+
+    if ($stmtDelete->execute()) {
+        // Simpan log penghapusan ke dalam tabel log_delete_categories
+        $deletedBy = $_SESSION['username'];
+        $additionalInfo = "Category ID $category_id deleted by $deletedBy";
+        $logQuery = "INSERT INTO log_delete_categories (category_id, deleted_by, additional_info) VALUES (?, ?, ?)";
+        $stmtLog = $koneklocalhost->prepare($logQuery);
+        $stmtLog->bind_param("iss", $category_id, $deletedBy, $additionalInfo);
+
+        if ($stmtLog->execute()) {
+            header("Location: categories.php");
+            exit;
+        } else {
+            die("Error logging delete action: " . $stmtLog->error);
+        }
+    } else {
+        die("Error deleting category: " . $stmtDelete->error);
+    }
 }
 ?>
 
@@ -158,7 +190,7 @@ if (isset($_POST['delete_category'])) {
                 include 'navigation.php';
                 ?>
 
-<div class="container-fluid">
+                <div class="container-fluid">
                     <div class="row">
                         <div class="col-lg-12">
                             <div class="card">
@@ -227,10 +259,7 @@ if (isset($_POST['delete_category'])) {
                                                     echo "<td>{$row['description']}</td>";
                                                     echo "<td>
                                                             <a href='categories.php?edit={$row['category_id']}' class='btn btn-warning btn-sm' title='Edit'><i class='fas fa-pen'></i></a>
-                                                            <form method='post' action='' class='d-inline'>
-                                                                <input type='hidden' name='delete_category_id' value='{$row['category_id']}'>
-                                                                <button type='submit' name='delete_category' class='btn btn-danger btn-sm' title='Delete'><i class='fas fa-trash'></i></button>
-                                                            </form>
+                                                            <button class='btn btn-danger btn-sm' title='Delete' onclick='confirmDelete({$row['category_id']})'><i class='fas fa-trash'></i></button>
                                                           </td>";
                                                     echo "</tr>";
                                                 }
@@ -272,22 +301,23 @@ if (isset($_POST['delete_category'])) {
     </script>
     <script>
         function confirmDelete(categoryId) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $('<form method="post">' +
-                        '<input type="hidden" name="delete_category_id" value="' + categoryId + '">' +
-                        '<input type="hidden" name="delete_category">' +
-                        '</form>').appendTo('body').submit();
-                }
-            });
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Kirim form dengan menggunakan jQuery untuk menghapus kategori
+                        $('<form method="post">' +
+                            '<input type="hidden" name="delete_category_id" value="' + categoryId + '">' +
+                            '<input type="hidden" name="delete_category">' +
+                            '</form>').appendTo('body').submit();
+                    }
+                });
         }
 
         function editCategory(category_id, category_name, description) {

@@ -53,6 +53,13 @@
                                 exit;
                             }
                             break;
+                        
+                        case 'wishlist':
+                            if ($currentPage !== 'wishlist.php') {
+                                header("Location: wishlist.php?page=wishlist");
+                                exit;
+                            }
+                            break;
                             
                         case 'dashboard':
                             if ($currentPage !== 'index.php') {

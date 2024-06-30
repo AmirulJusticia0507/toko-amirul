@@ -9,14 +9,14 @@ if (!isset($_SESSION['userid'])) {
     exit;
 }
 
-// Retrieve product details from database
-$sql = "SELECT p.product_name, p.description, p.price, p.stock_quantity, c.category_name, b.brand_name
-        FROM products p
-        LEFT JOIN categories c ON p.category_id = c.category_id
-        LEFT JOIN brands b ON p.brand_id = b.brand_id";
-$result = $koneklocalhost->query($sql);
+// Retrieve counts of products by category and brand
+$sql_product_counts = "SELECT p.category_id, p.brand_id, c.category_name, b.brand_name, COUNT(*) as count
+                       FROM products p
+                       LEFT JOIN categories c ON p.category_id = c.category_id
+                       LEFT JOIN brands b ON p.brand_id = b.brand_id
+                       GROUP BY p.category_id, p.brand_id, c.category_name, b.brand_name";
+$product_counts_result = $koneklocalhost->query($sql_product_counts);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,16 +30,15 @@ $result = $koneklocalhost->query($sql);
     <!-- Tambahkan link DataTables CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="checkbox.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
     <!-- Sertakan CSS Select2 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-<!-- <link rel="stylesheet" href="uploadfoto.css"> -->
     <link rel="icon" href="img/amirulshop.png" type="image/png">
     <style>
-        /* Tambahkan CSS agar tombol accordion terlihat dengan baik */
         .btn-link {
             text-decoration: none;
-            color: #007bff; /* Warna teks tombol */
+            color: #007bff;
         }
 
         .btn-link:hover {
@@ -47,12 +46,12 @@ $result = $koneklocalhost->query($sql);
         }
 
         .card-header {
-            background-color: #f7f7f7; /* Warna latar belakang header card */
+            background-color: #f7f7f7;
         }
 
         #notification {
             display: none;
-            margin-top: 10px; /* Adjust this value based on your layout */
+            margin-top: 10px;
             padding: 10px;
             border: 1px solid #ccc;
             background-color: #f8f8f8;
@@ -62,26 +61,28 @@ $result = $koneklocalhost->query($sql);
     <style>
         .myButtonCekSaldo {
             box-shadow: 3px 4px 0px 0px #899599;
-            background:linear-gradient(to bottom, #ededed 5%, #bab1ba 100%);
-            background-color:#ededed;
-            border-radius:15px;
-            border:1px solid #d6bcd6;
-            display:inline-block;
-            cursor:pointer;
-            color:#3a8a9e;
-            font-family:Arial;
-            font-size:17px;
-            padding:7px 25px;
-            text-decoration:none;
-            text-shadow:0px 1px 0px #e1e2ed;
+            background: linear-gradient(to bottom, #ededed 5%, #bab1ba 100%);
+            background-color: #ededed;
+            border-radius: 15px;
+            border: 1px solid #d6bcd6;
+            display: inline-block;
+            cursor: pointer;
+            color: #3a8a9e;
+            font-family: Arial;
+            font-size: 17px;
+            padding: 7px 25px;
+            text-decoration: none;
+            text-shadow: 0px 1px 0px #e1e2ed;
         }
+
         .myButtonCekSaldo:hover {
-            background:linear-gradient(to bottom, #bab1ba 5%, #ededed 100%);
-            background-color:#bab1ba;
+            background: linear-gradient(to bottom, #bab1ba 5%, #ededed 100%);
+            background-color: #bab1ba;
         }
+
         .myButtonCekSaldo:active {
-            position:relative;
-            top:1px;
+            position: relative;
+            top: 1px;
         }
 
         #imagePreview img {
@@ -109,7 +110,6 @@ $result = $koneklocalhost->query($sql);
         <?php include 'sidebar.php'; ?>
 
         <div class="content-wrapper">
-            <!-- Konten Utama -->
             <main class="content">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
@@ -117,42 +117,55 @@ $result = $koneklocalhost->query($sql);
                         <li class="breadcrumb-item active" aria-current="page">Catalog</li>
                     </ol>
                 </nav>
-                <?php
-                include 'navigation.php';
-                ?>
+                <?php include 'navigation.php'; ?>
 
                 <div class="row">
                     <?php
-                    // Loop through each product and display card
-                    if ($result->num_rows > 0) {
-                        while ($row = $result->fetch_assoc()) {
-                            echo '<div class="col-12 col-sm-6 col-md-4">
-                                    <div class="card product-card">
-                                        <div class="card-header text-muted border-bottom-0">
-                                            ' . $row['product_name'] . '
+                    if ($product_counts_result->num_rows > 0) {
+                        while ($row = $product_counts_result->fetch_assoc()) {
+                            echo '<div class="col-lg-3 col-6">
+                                    <div class="small-box bg-info">
+                                        <div class="inner">
+                                            <h3>' . $row['count'] . '</h3>
+                                            <p>' . $row['category_name'] . ' - ' . $row['brand_name'] . '</p>
                                         </div>
-                                        <div class="card-body pt-0">
-                                            <p class="text-muted"><b>Description:</b> ' . $row['description'] . '</p>
-                                            <p class="text-muted"><b>Price:</b> $' . $row['price'] . '</p>
-                                            <p class="text-muted"><b>Stock Quantity:</b> ' . $row['stock_quantity'] . '</p>
-                                            <p class="text-muted"><b>Category:</b> ' . $row['category_name'] . '</p>
-                                            <p class="text-muted"><b>Brand:</b> ' . $row['brand_name'] . '</p>
+                                        <div class="icon">
+                                            <i class="fas fa-shopping-cart"></i>
                                         </div>
-                                        <div class="card-footer">
-                                            <div class="text-right">
-                                                <div class="input-group">
-                                                    <input type="number" class="form-control" placeholder="Amount">
-                                                    <button class="btn btn-sm btn-primary ms-2">Add to Cart</button>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <a href="#" class="small-box-footer" onclick="showProductDetails(\'' . $row['category_id'] . '\', \'' . $row['brand_id'] . '\')">
+                                            More info <i class="fas fa-arrow-circle-right"></i>
+                                        </a>
                                     </div>
                                 </div>';
                         }
-                    } else {
-                        echo '<div class="col-12"><p>No products found.</p></div>';
                     }
                     ?>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3 class="card-title">Products List</h3>
+                    </div>
+                    <div class="card-body">
+                        <table id="productTable" class="display table table-bordered table-striped table-hover responsive nowrap" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Product Name</th>
+                                    <th>Photo Product</th>
+                                    <th>Description</th>
+                                    <th>Price</th>
+                                    <th>Stock Quantity</th>
+                                    <th>Category</th>
+                                    <th>Brand</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productDetails">
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
         </div>
@@ -164,18 +177,46 @@ $result = $koneklocalhost->query($sql);
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.2/umd/popper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/js/adminlte.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-<!-- Tambahkan Select2 -->
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Tambahkan event click pada tombol pushmenu
             $('.nav-link[data-widget="pushmenu"]').on('click', function() {
-                // Toggle class 'sidebar-collapse' pada elemen body
                 $('body').toggleClass('sidebar-collapse');
             });
         });
     </script>
-
+    <script>
+        function showProductDetails(category_id, brand_id) {
+            $.ajax({
+                url: 'fetch_product_details.php',
+                type: 'GET',
+                data: {
+                    category_id: category_id,
+                    brand_id: brand_id
+                },
+                success: function(response) {
+                    $('#productDetails').html(response);
+                    $('#productTable').DataTable().ajax.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error(xhr.responseText);
+                }
+            });
+        }
+    </script>
+    <script>
+        $(document).ready(function () {
+            $('#productTable').DataTable({
+                responsive: true,
+                scrollX: true,
+                searching: true,
+                lengthMenu: [10, 25, 50, 100, 500, 1000],
+                pageLength: 10,
+                dom: 'lBfrtip'
+            });
+        });
+    </script>
 </body>
 </html>

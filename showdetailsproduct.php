@@ -1,15 +1,12 @@
 <?php
-// Include your database connection and session management here
 include 'konekke_local.php';
-
-// Check if user is authenticated
 session_start();
+
 if (!isset($_SESSION['userid'])) {
     header('Location: login.php');
     exit;
 }
 
-// Initialize variables
 $product_id = null;
 $product_name = 'N/A';
 $description = 'N/A';
@@ -21,16 +18,13 @@ $status = 'N/A';
 $weight = 'N/A';
 $product_image = '';
 
-// Handle Add to Cart action
 if (isset($_POST['add_to_cart'])) {
     $product_id = $_POST['product_id'];
     $user_id = $_SESSION['userid'];
-    $quantity = 1; // default quantity
+    $quantity = 1;
 
-    // Start a transaction
     $koneklocalhost->begin_transaction();
 
-    // Check if the product is already in the cart
     $check_cart_query = "SELECT * FROM cart_items WHERE product_id = ? AND user_id = ?";
     $check_stmt = $koneklocalhost->prepare($check_cart_query);
     $check_stmt->bind_param("ii", $product_id, $user_id);
@@ -38,71 +32,87 @@ if (isset($_POST['add_to_cart'])) {
     $check_result = $check_stmt->get_result();
 
     if ($check_result->num_rows > 0) {
-        // If the product is already in the cart, update the quantity
         $update_cart_query = "UPDATE cart_items SET quantity = quantity + 1 WHERE product_id = ? AND user_id = ?";
-        $update_stmt = $koneklocalhost->prepare($update_cart_query);
-        $update_stmt->bind_param("ii", $product_id, $user_id);
-        $update_stmt->execute();
+        $update_cart_stmt = $koneklocalhost->prepare($update_cart_query);
+        $update_cart_stmt->bind_param("ii", $product_id, $user_id);
+        $update_cart_stmt->execute();
     } else {
-        // If the product is not in the cart, insert a new record
         $insert_cart_query = "INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)";
-        $insert_stmt = $koneklocalhost->prepare($insert_cart_query);
-        $insert_stmt->bind_param("iii", $user_id, $product_id, $quantity);
-        $insert_stmt->execute();
+        $insert_cart_stmt = $koneklocalhost->prepare($insert_cart_query);
+        $insert_cart_stmt->bind_param("iii", $user_id, $product_id, $quantity);
+        $insert_cart_stmt->execute();
     }
 
-    // Update the stock quantity in the products table
     $update_stock_query = "UPDATE products SET stock_quantity = stock_quantity - 1 WHERE product_id = ? AND stock_quantity > 0";
     $update_stock_stmt = $koneklocalhost->prepare($update_stock_query);
-    $update_stock_stmt->bind_param("i", $product_id);
+    $update_stock_stmt->bind_param("s", $product_id);
     $update_stock_stmt->execute();
 
     if ($update_stock_stmt->affected_rows > 0) {
-        // Commit the transaction if the stock was updated successfully
         $koneklocalhost->commit();
-        // Redirect to cart page with a success message
         header("Location: cart.php?message=Product added to cart successfully");
         exit;
     } else {
-        // Rollback the transaction if the stock update failed
         $koneklocalhost->rollback();
         echo "<p>Failed to add product to cart. Not enough stock available.</p>";
     }
 
-    // Close statements
     $check_stmt->close();
-    $insert_stmt->close();
+    $insert_cart_stmt->close();
     $update_cart_stmt->close();
     $update_stock_stmt->close();
 }
 
-// Retrieve product_id from URL parameter (make sure it's an integer)
-if (isset($_GET['product_id'])) {
-    $product_id = intval($_GET['product_id']);
+// Jika form Add to Wishlist diklik
+if (isset($_POST['add_to_wishlist'])) {
+    $product_id = $_POST['product_id'];
+    $user_id = $_SESSION['userid'];
 
-    // Prepare the SQL statement using a prepared statement with JOINs
+    $check_wishlist_query = "SELECT * FROM wishlist WHERE product_id = ? AND user_id = ?";
+    $check_wishlist_stmt = $koneklocalhost->prepare($check_wishlist_query);
+    $check_wishlist_stmt->bind_param("ii", $product_id, $user_id);
+    $check_wishlist_stmt->execute();
+    $check_wishlist_result = $check_wishlist_stmt->get_result();
+
+    if ($check_wishlist_result->num_rows === 0) {
+        $insert_wishlist_query = "INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)";
+        $insert_wishlist_stmt = $koneklocalhost->prepare($insert_wishlist_query);
+        $insert_wishlist_stmt->bind_param("ii", $user_id, $product_id);
+
+        if ($insert_wishlist_stmt->execute()) {
+            $_SESSION['wishlist_message'] = "Produk ini telah ditambahkan ke wishlist Anda. Silakan cek di wishlist Anda.";
+            header("Location: wishlist.php");
+            exit;
+        } else {
+            echo "Failed to add product to wishlist: " . $koneklocalhost->error;
+        }
+
+        $insert_wishlist_stmt->close();
+    } else {
+        echo "Product already in wishlist.";
+    }
+
+    $check_wishlist_stmt->close();
+}
+
+// Define the query to check wishlist
+$check_wishlist_query = "SELECT * FROM wishlist WHERE product_id = ? AND user_id = ?";
+
+if (isset($_GET['product_id'])) {
+    $product_id = $_GET['product_id'];
+
     $query = "SELECT p.*, c.category_name, b.brand_name
               FROM products p
               LEFT JOIN categories c ON p.category_id = c.category_id
               LEFT JOIN brands b ON p.brand_id = b.brand_id
               WHERE p.product_id = ?";
     $stmt = $koneklocalhost->prepare($query);
-
-    // Bind the parameter to the statement
-    $stmt->bind_param("i", $product_id); // Assuming product_id is an integer
-
-    // Execute the statement
+    $stmt->bind_param("s", $product_id);
     $stmt->execute();
-
-    // Get the result
     $result = $stmt->get_result();
 
-    // Check if there's a row returned
     if ($result->num_rows > 0) {
-        // Fetch product data
         $row = $result->fetch_assoc();
-
-        // Assign fetched values to variables
         $product_name = htmlspecialchars($row['product_name']);
         $description = htmlspecialchars($row['description']);
         $price = number_format($row['price'], 0, ',', '.');
@@ -112,19 +122,25 @@ if (isset($_GET['product_id'])) {
         $status = htmlspecialchars($row['status']);
         $weight = $row['weight'] . ' kg';
         $product_image = $row['product_image'];
+
+        // Check if product is in wishlist
+        $check_wishlist_stmt = $koneklocalhost->prepare($check_wishlist_query);
+        $check_wishlist_stmt->bind_param("ii", $product_id, $_SESSION['userid']);
+        $check_wishlist_stmt->execute();
+        $isInWishlist = $check_wishlist_stmt->num_rows > 0;
+
+        $check_wishlist_stmt->close();
     } else {
         echo "<p>No product found.</p>";
-        exit; // Exit script if no product found
+        exit;
     }
 
-    // Close statement
     $stmt->close();
 } else {
     echo "<p>Product ID not specified.</p>";
-    exit; // Exit script if product ID not specified
+    exit;
 }
 
-// Close connection
 $koneklocalhost->close();
 ?>
 
@@ -144,6 +160,17 @@ $koneklocalhost->close();
         /* Custom styles */
         .content-wrapper {
             min-height: 100vh;
+        }
+    </style>
+    <style>
+        .content-wrapper {
+            min-height: 100vh;
+        }
+        .wishlist-btn .fa-heart {
+            color: gray;
+        }
+        .wishlist-btn.added .fa-heart {
+            color: red;
         }
     </style>
 </head>
@@ -212,12 +239,14 @@ $koneklocalhost->close();
                                     </button>
                                 </form>&emsp;
 
-                                <form action="wishlist.php" method="post">
+                                <!-- Modify form for Wishlist button -->
+                                <form action="showdetailsproduct.php" method="post">
                                     <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
-                                    <button type="submit" name="add_to_wishlist" class="btn btn-default btn-lg btn-flat">
-                                        <i class="fas fa-heart fa-lg mr-2"></i>
-                                        Add to Wishlist
-                                    </button>
+                                    <?php if ($isInWishlist): ?>
+                                        <button type="button" class="btn btn-danger disabled"><i class="fas fa-heart"></i> Added to Wishlist</button>
+                                    <?php else: ?>
+                                        <button type="submit" class="btn btn-outline-secondary" name="add_to_wishlist"><i class="fas fa-heart"></i> Add to Wishlist</button>
+                                    <?php endif; ?>
                                 </form>
                             </div>
                         </div>
@@ -245,6 +274,30 @@ $koneklocalhost->close();
             $('body').toggleClass('sidebar-collapse');
         });
     });
+</script>
+<script>
+$(document).ready(function() {
+    // Handle Wishlist button click
+    $('#wishlistButton').click(function() {
+        var product_id = $(this).data('product-id');
+        var action = $(this).hasClass('text-danger') ? 'remove' : 'add';
+
+        $.ajax({
+            type: 'POST',
+            url: 'wishlist_action.php',
+            data: { product_id: product_id, action: action },
+            dataType: 'json',
+            success: function(response) {
+                $('#wishlistButton').toggleClass('text-danger');
+                $('#wishlistButton').text(response.message);
+                alert(response.message); // Optional: Show alert message
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                console.error('Error:', errorThrown);
+            }
+        });
+    });
+});
 </script>
 </body>
 </html>

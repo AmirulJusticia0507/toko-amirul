@@ -9,6 +9,23 @@ if (!isset($_SESSION['userid'])) {
     exit;
 }
 
+// Check user role
+$user_id = $_SESSION['userid'];
+$query = "SELECT status FROM users WHERE userid = ?";
+$stmt = $koneklocalhost->prepare($query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$stmt->bind_result($user_status);
+$stmt->fetch();
+$stmt->close();
+
+// Jika status user adalah Customer, redirect atau tampilkan pesan bahwa mereka tidak memiliki akses
+if ($user_status == 'Customer') {
+    // Misalnya, alihkan ke halaman lain atau tampilkan pesan error
+    header('Location: no-access.php');
+    exit;
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Create or update brand
@@ -164,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 include 'navigation.php';
                 ?>
 
-<div class="container-fluid">
+                <div class="container-fluid">
                     <div class="row">
                         <div class="col-md-12">
                             <div class="card">

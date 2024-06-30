@@ -7,6 +7,23 @@ if (!isset($_SESSION['userid'])) {
 
 include 'konekke_local.php';
 
+// Check user role
+$user_id = $_SESSION['userid'];
+$query = "SELECT status FROM users WHERE userid = ?";
+$stmt = $koneklocalhost->prepare($query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$stmt->bind_result($user_status);
+$stmt->fetch();
+$stmt->close();
+
+// Jika status user adalah Customer, redirect atau tampilkan pesan bahwa mereka tidak memiliki akses
+if ($user_status == 'Customer') {
+    // Misalnya, alihkan ke halaman lain atau tampilkan pesan error
+    header('Location: no-access.php');
+    exit;
+}
+
 // Initialize variables
 $product_id = '';
 $product_name = '';
@@ -143,103 +160,103 @@ function cleanInput($input) {
                 </nav>
                 <?php include 'navigation.php'; ?>
 
-                <!-- Form tambah/edit produk -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title" id="productFormTitle">Add New Product</h3>
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" onclick="hideProductForm()">
-                                <i class="fas fa-times"></i>
-                            </button>
+                    <!-- Form tambah/edit produk -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title" id="productFormTitle">Add New Product</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" onclick="hideProductForm()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <form id="productForm" action="" method="post" enctype="multipart/form-data">
+                                <input type="hidden" id="product_id" name="product_id" value="<?php echo isset($product_id) ? $product_id : ''; ?>">
+                                <div class="form-group">
+                                    <label for="product_name">Product Name</label>
+                                    <input type="text" class="form-control" id="product_name" name="product_name" value="<?php echo isset($product_name) ? $product_name : ''; ?>" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="description">Description</label>
+                                    <textarea class="form-control" id="description" name="description" required><?php echo isset($description) ? $description : ''; ?></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="price">Price</label>
+                                    <input type="number" class="form-control" id="price" name="price" step="0.01" value="<?php echo isset($price) ? $price : ''; ?>" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="stock_quantity">Stock Quantity</label>
+                                    <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" value="<?php echo isset($stock_quantity) ? $stock_quantity : ''; ?>" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="category_id">Category</label>
+                                    <select class="form-control" id="category_id" name="category_id" required>
+                                        <option value="">Select Category</option>
+                                        <?php
+                                        $query = "SELECT * FROM categories";
+                                        $result = $koneklocalhost->query($query);
+                                        while ($row = $result->fetch_assoc()) {
+                                            $selected = isset($category_id) && $category_id == $row['category_id'] ? 'selected' : '';
+                                            echo "<option value='{$row['category_id']}' $selected>{$row['category_name']}</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="brand_id">Brand</label>
+                                    <select class="form-control" id="brand_id" name="brand_id" required>
+                                        <option value="">Select Brand</option>
+                                        <?php
+                                        $query = "SELECT * FROM brands";
+                                        $result = $koneklocalhost->query($query);
+                                        while ($row = $result->fetch_assoc()) {
+                                            $selected = isset($brand_id) && $brand_id == $row['brand_id'] ? 'selected' : '';
+                                            echo "<option value='{$row['brand_id']}' $selected>{$row['brand_name']}</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="status">Status</label>
+                                    <select class="form-control" id="status" name="status" required>
+                                        <option value="available" <?php echo isset($status) && $status == 'available' ? 'selected' : ''; ?>>Available</option>
+                                        <option value="out of stock" <?php echo isset($status) && $status == 'out of stock' ? 'selected' : ''; ?>>Out of Stock</option>
+                                        <option value="discontinued" <?php echo isset($status) && $status == 'discontinued' ? 'selected' : ''; ?>>Discontinued</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="weight">Weight (kg)</label>
+                                    <input type="number" class="form-control" id="weight" name="weight" step="0.01" value="<?php echo isset($weight) ? $weight : ''; ?>" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="product_image">Product Image</label>
+                                    <input type="file" class="form-control-file" id="product_image" name="product_image" onchange="previewImage(this)">
+                                    <small class="form-text text-muted">Accepted formats: JPG, JPEG, PNG</small>
+                                    <div id="imagePreview" class="mt-2">
+                                        <?php if (!empty($product_image)): ?>
+                                            <img src="uploads/product/<?php echo $product_image; ?>" alt="Product Image Preview" style="max-width: 200px; max-height: 200px;">
+                                        <?php else: ?>
+                                            <p>No image uploaded</p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <?php if ($action == 'edit'): ?>
+                                    <button type="submit" name="update" class="btn btn-primary">Update Product</button>
+                                <?php else: ?>
+                                    <button type="submit" name="simpan" class="btn btn-primary">Simpan Product</button>
+                                <?php endif; ?>
+                            </form>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <form id="productForm" action="" method="post" enctype="multipart/form-data">
-                            <input type="hidden" id="product_id" name="product_id" value="<?php echo isset($product_id) ? $product_id : ''; ?>">
-                            <div class="form-group">
-                                <label for="product_name">Product Name</label>
-                                <input type="text" class="form-control" id="product_name" name="product_name" value="<?php echo isset($product_name) ? $product_name : ''; ?>" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="description">Description</label>
-                                <textarea class="form-control" id="description" name="description" required><?php echo isset($description) ? $description : ''; ?></textarea>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="price">Price</label>
-                                <input type="number" class="form-control" id="price" name="price" step="0.01" value="<?php echo isset($price) ? $price : ''; ?>" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="stock_quantity">Stock Quantity</label>
-                                <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" value="<?php echo isset($stock_quantity) ? $stock_quantity : ''; ?>" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="category_id">Category</label>
-                                <select class="form-control" id="category_id" name="category_id" required>
-                                    <option value="">Select Category</option>
-                                    <?php
-                                    $query = "SELECT * FROM categories";
-                                    $result = $koneklocalhost->query($query);
-                                    while ($row = $result->fetch_assoc()) {
-                                        $selected = isset($category_id) && $category_id == $row['category_id'] ? 'selected' : '';
-                                        echo "<option value='{$row['category_id']}' $selected>{$row['category_name']}</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="brand_id">Brand</label>
-                                <select class="form-control" id="brand_id" name="brand_id" required>
-                                    <option value="">Select Brand</option>
-                                    <?php
-                                    $query = "SELECT * FROM brands";
-                                    $result = $koneklocalhost->query($query);
-                                    while ($row = $result->fetch_assoc()) {
-                                        $selected = isset($brand_id) && $brand_id == $row['brand_id'] ? 'selected' : '';
-                                        echo "<option value='{$row['brand_id']}' $selected>{$row['brand_name']}</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="status">Status</label>
-                                <select class="form-control" id="status" name="status" required>
-                                    <option value="available" <?php echo isset($status) && $status == 'available' ? 'selected' : ''; ?>>Available</option>
-                                    <option value="out of stock" <?php echo isset($status) && $status == 'out of stock' ? 'selected' : ''; ?>>Out of Stock</option>
-                                    <option value="discontinued" <?php echo isset($status) && $status == 'discontinued' ? 'selected' : ''; ?>>Discontinued</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="weight">Weight (kg)</label>
-                                <input type="number" class="form-control" id="weight" name="weight" step="0.01" value="<?php echo isset($weight) ? $weight : ''; ?>" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="product_image">Product Image</label>
-                                <input type="file" class="form-control-file" id="product_image" name="product_image" onchange="previewImage(this)">
-                                <small class="form-text text-muted">Accepted formats: JPG, JPEG, PNG</small>
-                                <div id="imagePreview" class="mt-2">
-                                    <?php if (!empty($product_image)): ?>
-                                        <img src="uploads/product/<?php echo $product_image; ?>" alt="Product Image Preview" style="max-width: 200px; max-height: 200px;">
-                                    <?php else: ?>
-                                        <p>No image uploaded</p>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <?php if ($action == 'edit'): ?>
-                                <button type="submit" name="update" class="btn btn-primary">Update Product</button>
-                            <?php else: ?>
-                                <button type="submit" name="simpan" class="btn btn-primary">Simpan Product</button>
-                            <?php endif; ?>
-                        </form>
-                    </div>
-                </div>
                     <!-- Tampilkan produk dalam tabel -->
                     <div class="card mt-4">
                         <div class="card-header">

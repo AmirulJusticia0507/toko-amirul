@@ -61,21 +61,21 @@ $usersid = isset($_SESSION['usersid']) ? $_SESSION['usersid'] : '';
                 </a>
             </li>
             <li class="nav-item">
-                <a href="productmanagement.php?page=productmanagement" class="nav-link <?php echo isPageActive('productmanagement'); ?><?php echo ($role !== 'Admin') ? ' disabled' : ''; ?>">
-                    <i class="fa fa-book nav-icon"></i>
-                    <p>Product Management</p>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="categories.php?page=categories" class="nav-link <?php echo isPageActive('categories'); ?><?php echo ($role !== 'Admin') ? ' disabled' : ''; ?>">
+                <a href="categories.php?page=categories" class="nav-link <?php echo isPageActive('categories'); ?>">
                     <i class="fa fa-list-alt nav-icon"></i>
                     <p>Categories</p>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="brands.php?page=brands" class="nav-link <?php echo isPageActive('brands'); ?><?php echo ($role !== 'Admin') ? ' disabled' : ''; ?>">
+                <a href="brands.php?page=brands" class="nav-link <?php echo isPageActive('brands'); ?>">
                     <i class="fa fa-tags nav-icon"></i>
                     <p>Brands</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="catalog.php?page=catalog" class="nav-link <?php echo isPageActive('catalog'); ?>">
+                    <i class="fa fa-users nav-icon"></i>
+                    <p>Catalog</p>
                 </a>
             </li>
             <li class="nav-item">
@@ -88,6 +88,12 @@ $usersid = isset($_SESSION['usersid']) ? $_SESSION['usersid'] : '';
                 <a href="riwayattransaksi.php?page=riwayattransaksi" class="nav-link <?php echo isPageActive('riwayattransaksi'); ?>">
                     <i class="fa fa-history nav-icon"></i>
                     <p>History Transaction</p>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="wishlist.php?page=wishlist" class="nav-link <?php echo isPageActive('wishlist'); ?>">
+                    <i class="fa fa-heart nav-icon"></i>
+                    <p>Wishlist</p>
                 </a>
             </li>
             <li class="nav-item">
