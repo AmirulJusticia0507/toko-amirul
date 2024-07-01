@@ -244,6 +244,9 @@ function format_rupiah($amount) {
                 include 'navigation.php';
                 ?>
 
+            <div class="container">
+                <h1 class="mt-4 mb-4">Riwayat Transaksi</h1>
+
                 <!-- Timeline -->
                 <div class="timeline">
                     <?php while ($row = $result->fetch_assoc()): ?>
@@ -277,6 +280,7 @@ function format_rupiah($amount) {
                         </div>
                     <?php endwhile; ?>
                 </div>
+            </div>
 
             </main>
         </div>
@@ -305,25 +309,29 @@ function format_rupiah($amount) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['tanggalpengemasan'])) {
         $tanggalpengemasan = $_POST['tanggalpengemasan'];
-        $user_id = $_SESSION['userid'];
+        $transaction_id = $_POST['transaction_id'];
 
-        // Update tanggalpengemasan in users table or related transaction table
-        $update_query = "UPDATE users SET tanggalpengemasan = ? WHERE user_id = ?";
+        // Update tanggalpengemasan in amirulpay_transactions table
+        $update_query = "UPDATE amirulpay_transactions SET tanggalpengemasan = ? WHERE transaction_id = ?";
         $stmt = $koneklocalhost->prepare($update_query);
-        $stmt->bind_param("si", $tanggalpengemasan, $user_id);
+        $stmt->bind_param("si", $tanggalpengemasan, $transaction_id);
         $stmt->execute();
         $stmt->close();
     } elseif (isset($_POST['tanggalpengiriman'])) {
         $tanggalpengiriman = $_POST['tanggalpengiriman'];
-        $user_id = $_SESSION['userid'];
+        $transaction_id = $_POST['transaction_id'];
 
-        // Update tanggalpengiriman in users table or related transaction table
-        $update_query = "UPDATE users SET tanggalpengiriman = ? WHERE user_id = ?";
+        // Update tanggalpengiriman in amirulpay_transactions table
+        $update_query = "UPDATE amirulpay_transactions SET tanggalpengiriman = ? WHERE transaction_id = ?";
         $stmt = $koneklocalhost->prepare($update_query);
-        $stmt->bind_param("si", $tanggalpengiriman, $user_id);
+        $stmt->bind_param("si", $tanggalpengiriman, $transaction_id);
         $stmt->execute();
         $stmt->close();
     }
+
+    // Redirect to prevent form resubmission on refresh
+    header('Location: riwayattransaksi.php');
+    exit;
 }
 ?>
 

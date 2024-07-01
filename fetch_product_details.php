@@ -36,7 +36,7 @@ if ($result->num_rows > 0) {
         echo "<td>{$row['category_name']}</td>";
         echo "<td>{$row['brand_name']}</td>";
         echo "<td>{$row['status']}</td>";
-        echo "<td>";
+        echo "<td style='text-align:center; width: 2px; font-size: 10pt; white-space: normal;'>";
         // echo "<button type='button' class='btn btn-sm btn-primary' onclick='editProduct(\"{$row['product_id']}\")' title='Edit'><i class='fas fa-edit'></i></button> ";
         // echo "<button type='button' class='btn btn-sm btn-danger' onclick='confirmDelete(\"{$row['product_id']}\")' title='Delete'><i class='fas fa-trash'></i></button>&nbsp;";
         echo "<a href='showdetailsproduct.php?product_id={$row['product_id']}' class='btn btn-sm btn-info' title='Details' target='_blank'><i class='fas fa-eye'></i></a>";

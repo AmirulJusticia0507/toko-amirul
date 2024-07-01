@@ -115,36 +115,53 @@ if (!isset($_SESSION['userid'])) {
                 ?>
 
                 <div class="row" align="center">
-                    <div class="col-md-3 mb-3">
-                        <div class="card">
-                            <div class="card-body text-center">
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="small-box bg-secondary">
+                            <div class="inner text-center">
                                 <i class="fas fa-user fa-3x"></i>
-                                <h5 class="card-title">Product</h5>
+                                <h5 class="card-title mt-3">Product</h5>
                                 <p class="card-text">Product Management</p>
-                                <button onclick="location.href='productmanagement.php?page=productmanagement'" class="btn btn-secondary"><i class="fas fa-user"></i> Product</button>
                             </div>
+                            <div class="icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <a href="productmanagement.php?page=productmanagement" class="small-box-footer">
+                                Manage Products <i class="fas fa-arrow-circle-right"></i>
+                            </a>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card">
-                            <div class="card-body text-center">
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="small-box bg-danger">
+                            <div class="inner text-center">
                                 <i class="fas fa-wallet fa-3x"></i>
-                                <h5 class="card-title">Saldo</h5>
+                                <h5 class="card-title mt-3">Saldo</h5>
                                 <p class="card-text">Isi Saldo</p>
-                                <button onclick="location.href='saldo.php?page=saldo'" class="btn btn-danger"><i class="fas fa-wallet"></i> Isi Saldo</button>
                             </div>
+                            <div class="icon">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <a href="saldo.php?page=saldo" class="small-box-footer">
+                                Top-up Balance <i class="fas fa-arrow-circle-right"></i>
+                            </a>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card">
-                            <div class="card-body text-center">
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="small-box bg-success">
+                            <div class="inner text-center">
                                 <i class="fas fa-file-alt fa-3x"></i>
-                                <h5 class="card-title">History</h5>
+                                <h5 class="card-title mt-3">History</h5>
                                 <p class="card-text">Lihat Riwayat Pesanan</p>
-                                <button onclick="location.href='cart.php?page=cart'" class="btn btn-success"><i class="fas fa-file-alt"></i> Pesanan Saya</button>
                             </div>
+                            <div class="icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <a href="cart.php?page=cart" class="small-box-footer">
+                                My Orders <i class="fas fa-arrow-circle-right"></i>
+                            </a>
                         </div>
-                    </div><hr><br>
+                    </div>
+                </div>
+                <hr><br>
 
             </main>
         </div>

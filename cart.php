@@ -95,7 +95,10 @@ $result = $stmt->get_result();
         <h1 class="mt-4 mb-4">Keranjang</h1>
 
         <?php if (isset($_GET['message'])): ?>
-            <div class="alert alert-success"><?php echo htmlspecialchars($_GET['message']); ?></div>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo htmlspecialchars($_GET['message']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         <?php endif; ?>
 
         <?php if ($result->num_rows > 0): ?>
@@ -153,5 +156,14 @@ $result = $stmt->get_result();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.5.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/js/adminlte.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script>
+        // Script untuk menutup alert message secara otomatis setelah beberapa detik
+        window.setTimeout(function() {
+            $(".alert").fadeTo(500, 0).slideUp(500, function(){
+                $(this).remove();
+            });
+        }, 4000); // Waktu dalam milidetik (misal: 4000 untuk 4 detik)
+    </script>
+
 </body>
 </html>

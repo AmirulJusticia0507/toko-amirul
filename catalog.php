@@ -34,6 +34,7 @@ $product_counts_result = $koneklocalhost->query($sql_product_counts);
     <!-- Sertakan CSS Select2 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css">
     <link rel="icon" href="img/amirulshop.png" type="image/png">
     <style>
         .btn-link {
@@ -92,7 +93,9 @@ $product_counts_result = $koneklocalhost->query($sql_product_counts);
             padding: 5px;
             height: 150px;
         }
-
+        .small-box {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 
@@ -150,7 +153,7 @@ $product_counts_result = $koneklocalhost->query($sql_product_counts);
                         <table id="productTable" class="display table table-bordered table-striped table-hover responsive nowrap" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>#</th>
+                                    <th>Kode Product</th>
                                     <th>Product Name</th>
                                     <th>Photo Product</th>
                                     <th>Description</th>
@@ -159,7 +162,7 @@ $product_counts_result = $koneklocalhost->query($sql_product_counts);
                                     <th>Category</th>
                                     <th>Brand</th>
                                     <th>Status</th>
-                                    <th>Action</th>
+                                    <th style="text-align:center;">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="productDetails">

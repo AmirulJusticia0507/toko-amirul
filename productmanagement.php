@@ -259,7 +259,7 @@ function cleanInput($input) {
                                     </div>
                                 </div>
                                 <?php if ($action == 'edit'): ?>
-                                    <button type="submit" name="update" class="btn btn-primary">Update Product</button>
+                                    <button type="submit" name="update" class="btn btn-Update">Update Product</button>
                                 <?php else: ?>
                                     <button type="submit" name="simpan" class="btn btn-primary">Simpan Product</button>
                                 <?php endif; ?>

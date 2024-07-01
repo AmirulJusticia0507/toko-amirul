@@ -56,20 +56,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
     $delete_userid = mysqli_real_escape_string($koneklocalhost, $_POST['userid']);
 
     if ($status != 'Customer') {
-        // Query untuk delete user
-        $delete_query = "DELETE FROM `users` WHERE `userid` = '$delete_userid'";
-        $delete_result = mysqli_query($koneklocalhost, $delete_query);
+        // Log the deletion before actually deleting the user
+        $log_query = "INSERT INTO `log_delete_users` (`user_id`, `deleted_at`, `deleted_by`, `additional_info`) VALUES ('$delete_userid', NOW(), '$userid', 'User deleted by admin')";
+        $log_result = mysqli_query($koneklocalhost, $log_query);
 
-        if ($delete_result) {
-            echo '<script>alert("User deleted successfully!");</script>';
+        if ($log_result) {
+            // Query untuk delete user
+            $delete_query = "DELETE FROM `users` WHERE `userid` = '$delete_userid'";
+            $delete_result = mysqli_query($koneklocalhost, $delete_query);
+
+            if ($delete_result) {
+                echo '<script>alert("User deleted successfully!");</script>';
+            } else {
+                echo '<script>alert("Failed to delete user. Please try again.");</script>';
+            }
         } else {
-            echo '<script>alert("Failed to delete user. Please try again.");</script>';
+            echo '<script>alert("Failed to log the deletion. Please try again.");</script>';
         }
     } else {
         echo '<script>alert("Customers are not allowed to delete users!");</script>';
     }
 }
-
 ?>
 
 <!DOCTYPE html>
