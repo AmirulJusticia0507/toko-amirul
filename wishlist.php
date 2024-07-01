@@ -1,6 +1,6 @@
 <?php
-session_start();
 include 'konekke_local.php';
+session_start();
 
 if (!isset($_SESSION['userid'])) {
     header('Location: login.php');
@@ -8,23 +8,41 @@ if (!isset($_SESSION['userid'])) {
 }
 
 $user_id = $_SESSION['userid'];
-$query = "
-    SELECT p.*, w.*
-    FROM wishlist w
-    JOIN products p ON w.product_id = p.product_id
-    WHERE w.user_id = ?
-";
+
+// Handle wishlist removal
+if (isset($_POST['remove_from_wishlist'])) {
+    $product_id = htmlspecialchars(trim($_POST['product_id']), ENT_QUOTES, 'UTF-8');
+
+    $remove_query = "DELETE FROM wishlist WHERE user_id = ? AND product_id = ?";
+    $remove_stmt = $koneklocalhost->prepare($remove_query);
+    $remove_stmt->bind_param("is", $user_id, $product_id);
+    $remove_stmt->execute();
+    $remove_stmt->close();
+
+    $_SESSION['wishlist_message'] = "Produk berhasil dihapus dari wishlist.";
+    header("Location: wishlist.php");
+    exit;
+}
+
+// Fetch wishlist items
+$query = "SELECT p.*, w.id 
+          FROM wishlist w
+          JOIN products p ON w.product_id = p.product_id
+          WHERE w.user_id = ?";
 $stmt = $koneklocalhost->prepare($query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Tampilkan pesan notifikasi jika ada
-if (isset($_SESSION['wishlist_message'])) {
-    echo '<div id="notification" class="alert alert-success">' . $_SESSION['wishlist_message'] . '</div>';
-    unset($_SESSION['wishlist_message']); // Hapus pesan notifikasi setelah ditampilkan
+$wishlist_items = [];
+while ($row = $result->fetch_assoc()) {
+    $wishlist_items[] = $row;
 }
+
+$stmt->close();
+$koneklocalhost->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -130,34 +148,35 @@ if (isset($_SESSION['wishlist_message'])) {
                 ?>
 
                 <!-- Tampilkan produk wishlist -->
-                <div class="container mt-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">My Wishlist</h3>
+                <div class="container mt-5">
+                    <h2>Wishlist</h2>
+                    <?php if (isset($_SESSION['wishlist_message'])): ?>
+                        <div class="alert alert-success">
+                            <?php echo $_SESSION['wishlist_message']; unset($_SESSION['wishlist_message']); ?>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <?php while ($product = $result->fetch_assoc()): ?>
-                                    <div class="col-md-4">
-                                        <div class="card mb-4">
-                                            <img src="uploads/product/<?php echo htmlspecialchars($product['product_image']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($product['product_name']); ?>">
-                                            <div class="card-body">
-                                                <h5 class="card-title"><?php echo htmlspecialchars($product['product_name']); ?></h5>
-                                                <p class="card-text"><?php echo htmlspecialchars($product['description']); ?></p>
-                                                <p class="card-text">Price: Rp <?php echo number_format($product['price'], 0, ',', '.'); ?></p>
-                                                <p class="card-text">Stock Quantity: <?php echo $product['stock_quantity']; ?></p>
-                                                <!-- Form untuk menghapus dari wishlist -->
-                                                <form action="wishlist_action.php" method="post">
-                                                    <input type="hidden" name="product_id" value="<?php echo $product['product_id']; ?>">
-                                                    <input type="hidden" name="action" value="remove">
-                                                    <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Remove from Wishlist</button>
-                                                </form>
-                                            </div>
+                    <?php endif; ?>
+
+                    <div class="row">
+                        <?php if (count($wishlist_items) > 0): ?>
+                            <?php foreach ($wishlist_items as $item): ?>
+                                <div class="col-md-4">
+                                    <div class="card mb-4">
+                                        <img src="uploads/product/<?php echo htmlspecialchars($item['product_image'], ENT_QUOTES, 'UTF-8'); ?>" class="card-img-top" alt="Product Image">
+                                        <div class="card-body">
+                                            <h5 class="card-title"><?php echo htmlspecialchars($item['product_name'], ENT_QUOTES, 'UTF-8'); ?></h5>
+                                            <p class="card-text"><?php echo htmlspecialchars($item['description'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                            <p class="card-text">Price: Rp <?php echo number_format($item['price'], 0, ',', '.'); ?></p>
+                                            <form action="wishlist.php" method="post">
+                                                <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($item['product_id'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                <button type="submit" name="remove_from_wishlist" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Remove</button>
+                                            </form>
                                         </div>
                                     </div>
-                                <?php endwhile; ?>
-                            </div>
-                        </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p>Your wishlist is empty.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
 

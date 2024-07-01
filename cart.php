@@ -16,12 +16,28 @@ $user_id = $_SESSION['userid'];
 if (isset($_POST['remove_from_cart'])) {
     $cart_item_id = $_POST['cart_item_id'];
 
+    // Get the product_id and quantity of the item being removed
+    $select_cart_query = "SELECT product_id, quantity FROM cart_items WHERE cart_item_id = ? AND user_id = ?";
+    $select_stmt = $koneklocalhost->prepare($select_cart_query);
+    $select_stmt->bind_param("ii", $cart_item_id, $user_id);
+    $select_stmt->execute();
+    $select_stmt->bind_result($product_id, $quantity);
+    $select_stmt->fetch();
+    $select_stmt->close();
+
     // Delete the cart item from the database
     $delete_cart_query = "DELETE FROM cart_items WHERE cart_item_id = ? AND user_id = ?";
     $delete_stmt = $koneklocalhost->prepare($delete_cart_query);
     $delete_stmt->bind_param("ii", $cart_item_id, $user_id);
     $delete_stmt->execute();
     $delete_stmt->close();
+
+    // Update the stock_quantity in the products table
+    $update_product_query = "UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ?";
+    $update_stmt = $koneklocalhost->prepare($update_product_query);
+    $update_stmt->bind_param("ii", $quantity, $product_id);
+    $update_stmt->execute();
+    $update_stmt->close();
 
     // Redirect to cart page with a success message
     header("Location: cart.php?message=Product removed from cart successfully");
@@ -76,9 +92,8 @@ $result = $stmt->get_result();
 </head>
 <body>
     <div class="container">
-        
         <h1 class="mt-4 mb-4">Keranjang</h1>
-        
+
         <?php if (isset($_GET['message'])): ?>
             <div class="alert alert-success"><?php echo htmlspecialchars($_GET['message']); ?></div>
         <?php endif; ?>

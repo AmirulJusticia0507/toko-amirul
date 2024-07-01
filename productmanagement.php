@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (!empty($product_id)) {
         $query = "UPDATE products SET product_name=?, description=?, price=?, stock_quantity=?, category_id=?, brand_id=?, product_image=?, status=?, weight=? WHERE product_id=?";
         $stmt = $koneklocalhost->prepare($query);
-        $stmt->bind_param("sssiiissssi", $product_name, $description, $price, $stock_quantity, $category_id, $brand_id, $image_url, $status, $weight, $product_id);
+        $stmt->bind_param("sssiiisssi", $product_name, $description, $price, $stock_quantity, $category_id, $brand_id, $image_url, $status, $weight, $product_id);
     } else {
         // Generate unique product_id for new product
         $product_id = 'P' . date('YmdHis');
@@ -129,6 +129,15 @@ function cleanInput($input) {
         }
         .form-control-feedback {
             margin-right: 20px;
+        }
+        .img-thumbnail {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .badge {
+            padding: 0.5em 1em;
+            font-size: 0.9em;
         }
     </style>
 </head>
@@ -271,7 +280,7 @@ function cleanInput($input) {
                                             <th>Photo Product</th>
                                             <th>Description</th>
                                             <th>Price</th>
-                                            <th>Stock Quantity</th>
+                                            <th nowrap>Stock Quantity</th>
                                             <th>Category</th>
                                             <th>Brand</th>
                                             <th>Status</th>
@@ -287,7 +296,7 @@ function cleanInput($input) {
                                             echo "<tr>";
                                             echo "<td>{$row['product_id']}</td>";
                                             echo "<td>{$row['product_name']}</td>";
-                                            echo "<td>";
+                                            echo "<td style='text-align: center; vertical-align: middle;'>";
                                             if (!empty($row['product_image'])) {
                                                 $photoPath = "uploads/product/{$row['product_image']}";
                                                 echo "<a href='{$photoPath}' data-fancybox='gallery'>";
@@ -299,9 +308,18 @@ function cleanInput($input) {
                                             echo "</td>";
                                             echo "<td>{$row['description']}</td>";
                                             echo "<td>" . number_format($row['price'], 0, ',', '.') . "</td>";
-                                            echo "<td>{$row['stock_quantity']}</td>";
+                                            echo "<td style='text-align: center; vertical-align: middle;'>{$row['stock_quantity']}</td>";
                                             echo "<td>{$row['category_name']}</td>";
                                             echo "<td>{$row['brand_name']}</td>";
+                                            // echo "<td>";
+                                            // if ($row['status'] == 'Available') {
+                                            //     echo "<span class='badge badge-success'>Available</span>";
+                                            // } elseif ($row['status'] == 'Out of Stock') {
+                                            //     echo "<span class='badge badge-warning'>Out of Stock</span>";
+                                            // } elseif ($row['status'] == 'Discontinued') {
+                                            //     echo "<span class='badge badge-danger'>Discontinued</span>";
+                                            // }
+                                            // echo "</td>";
                                             echo "<td>{$row['status']}</td>";
                                             echo "<td>";
                                             echo "<button type='button' class='btn btn-sm btn-primary' onclick='editProduct(\"{$row['product_id']}\")' title='Edit'><i class='fas fa-edit'></i></button> ";

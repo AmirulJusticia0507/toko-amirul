@@ -18,8 +18,14 @@ $status = 'N/A';
 $weight = 'N/A';
 $product_image = '';
 
+// Function to clean input data
+function cleanInput($input) {
+    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+}
+
+// Jika form Add to Cart diklik
 if (isset($_POST['add_to_cart'])) {
-    $product_id = $_POST['product_id'];
+    $product_id = cleanInput($_POST['product_id']);
     $user_id = $_SESSION['userid'];
     $quantity = 1;
 
@@ -27,19 +33,19 @@ if (isset($_POST['add_to_cart'])) {
 
     $check_cart_query = "SELECT * FROM cart_items WHERE product_id = ? AND user_id = ?";
     $check_stmt = $koneklocalhost->prepare($check_cart_query);
-    $check_stmt->bind_param("ii", $product_id, $user_id);
+    $check_stmt->bind_param("si", $product_id, $user_id);
     $check_stmt->execute();
     $check_result = $check_stmt->get_result();
 
     if ($check_result->num_rows > 0) {
         $update_cart_query = "UPDATE cart_items SET quantity = quantity + 1 WHERE product_id = ? AND user_id = ?";
         $update_cart_stmt = $koneklocalhost->prepare($update_cart_query);
-        $update_cart_stmt->bind_param("ii", $product_id, $user_id);
+        $update_cart_stmt->bind_param("si", $product_id, $user_id);
         $update_cart_stmt->execute();
     } else {
         $insert_cart_query = "INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)";
         $insert_cart_stmt = $koneklocalhost->prepare($insert_cart_query);
-        $insert_cart_stmt->bind_param("iii", $user_id, $product_id, $quantity);
+        $insert_cart_stmt->bind_param("isi", $user_id, $product_id, $quantity);
         $insert_cart_stmt->execute();
     }
 
@@ -65,19 +71,19 @@ if (isset($_POST['add_to_cart'])) {
 
 // Jika form Add to Wishlist diklik
 if (isset($_POST['add_to_wishlist'])) {
-    $product_id = $_POST['product_id'];
+    $product_id = cleanInput($_POST['product_id']);
     $user_id = $_SESSION['userid'];
 
     $check_wishlist_query = "SELECT * FROM wishlist WHERE product_id = ? AND user_id = ?";
     $check_wishlist_stmt = $koneklocalhost->prepare($check_wishlist_query);
-    $check_wishlist_stmt->bind_param("ii", $product_id, $user_id);
+    $check_wishlist_stmt->bind_param("si", $product_id, $user_id);
     $check_wishlist_stmt->execute();
     $check_wishlist_result = $check_wishlist_stmt->get_result();
 
     if ($check_wishlist_result->num_rows === 0) {
         $insert_wishlist_query = "INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)";
         $insert_wishlist_stmt = $koneklocalhost->prepare($insert_wishlist_query);
-        $insert_wishlist_stmt->bind_param("ii", $user_id, $product_id);
+        $insert_wishlist_stmt->bind_param("is", $user_id, $product_id);
 
         if ($insert_wishlist_stmt->execute()) {
             $_SESSION['wishlist_message'] = "Produk ini telah ditambahkan ke wishlist Anda. Silakan cek di wishlist Anda.";
@@ -99,7 +105,7 @@ if (isset($_POST['add_to_wishlist'])) {
 $check_wishlist_query = "SELECT * FROM wishlist WHERE product_id = ? AND user_id = ?";
 
 if (isset($_GET['product_id'])) {
-    $product_id = $_GET['product_id'];
+    $product_id = cleanInput($_GET['product_id']);
 
     $query = "SELECT p.*, c.category_name, b.brand_name
               FROM products p
@@ -125,8 +131,9 @@ if (isset($_GET['product_id'])) {
 
         // Check if product is in wishlist
         $check_wishlist_stmt = $koneklocalhost->prepare($check_wishlist_query);
-        $check_wishlist_stmt->bind_param("ii", $product_id, $_SESSION['userid']);
+        $check_wishlist_stmt->bind_param("si", $product_id, $_SESSION['userid']);
         $check_wishlist_stmt->execute();
+        $check_wishlist_stmt->store_result();
         $isInWishlist = $check_wishlist_stmt->num_rows > 0;
 
         $check_wishlist_stmt->close();
@@ -245,7 +252,7 @@ $koneklocalhost->close();
                                     <?php if ($isInWishlist): ?>
                                         <button type="button" class="btn btn-danger disabled"><i class="fas fa-heart"></i> Added to Wishlist</button>
                                     <?php else: ?>
-                                        <button type="submit" class="btn btn-outline-secondary" name="add_to_wishlist"><i class="fas fa-heart"></i> Add to Wishlist</button>
+                                        <button type="submit" name="add_to_wishlist" class="btn btn-outline-secondary"><i class="fas fa-heart"></i> Add to Wishlist</button>
                                     <?php endif; ?>
                                 </form>
                             </div>
