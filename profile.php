@@ -34,13 +34,14 @@ if (!$result) {
 }
 
 // Proses update profile jika form disubmit
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $fullname = $_POST['fullname'];
-    $alamat = $_POST['alamat'];
-    $no_hp = $_POST['no_hp'];
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
+    $fullname = mysqli_real_escape_string($koneklocalhost, $_POST['fullname']);
+    $alamat = mysqli_real_escape_string($koneklocalhost, $_POST['alamat']);
+    $no_hp = mysqli_real_escape_string($koneklocalhost, $_POST['no_hp']);
+    $edit_userid = mysqli_real_escape_string($koneklocalhost, $_POST['userid']);
 
     // Query untuk update data profile
-    $update_query = "UPDATE `users` SET `fullname` = '$fullname', `alamat` = '$alamat', `no_hp` = '$no_hp' WHERE `userid` = '$userid'";
+    $update_query = "UPDATE `users` SET `fullname` = '$fullname', `alamat` = '$alamat', `no_hp` = '$no_hp' WHERE `userid` = '$edit_userid'";
     $update_result = mysqli_query($koneklocalhost, $update_query);
 
     if ($update_result) {
@@ -48,11 +49,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         echo '<script>alert("Failed to update profile. Please try again.");</script>';
     }
-
-    // Refresh data setelah update
-    $result = mysqli_query($koneklocalhost, "SELECT * FROM `users` WHERE `userid` = '$userid'");
-    $row = mysqli_fetch_assoc($result);
 }
+
+// Proses delete user jika button di klik
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
+    $delete_userid = mysqli_real_escape_string($koneklocalhost, $_POST['userid']);
+
+    if ($status != 'Customer') {
+        // Query untuk delete user
+        $delete_query = "DELETE FROM `users` WHERE `userid` = '$delete_userid'";
+        $delete_result = mysqli_query($koneklocalhost, $delete_query);
+
+        if ($delete_result) {
+            echo '<script>alert("User deleted successfully!");</script>';
+        } else {
+            echo '<script>alert("Failed to delete user. Please try again.");</script>';
+        }
+    } else {
+        echo '<script>alert("Customers are not allowed to delete users!");</script>';
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -68,9 +85,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <!-- Tambahkan link DataTables CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="checkbox.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
     <!-- Sertakan CSS Select2 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css">
 <!-- <link rel="stylesheet" href="uploadfoto.css"> -->
     <link rel="icon" href="img/amirulshop.png" type="image/png">
     <style>
@@ -160,37 +179,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 ?>
 
                 <div class="container-fluid">
-                    <div class="row">
+                    <!-- <div class="row">
                         <div class="col-md-12">
                             <div class="card">
                                 <div class="card-header">
                                     <h3 class="card-title">Profile Information</h3>
                                 </div>
                                 <div class="card-body">
-                                    <!-- Form Edit Profile -->
                                     <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" enctype="multipart/form-data">
                                         <div class="mb-3">
                                             <label for="username" class="form-label">Username</label>
-                                            <input type="text" class="form-control" id="username" name="username" value="<?php echo $row['username']; ?>" disabled>
+                                            <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($row['username']); ?>" disabled>
                                         </div>
                                         <div class="mb-3">
                                             <label for="fullname" class="form-label">Full Name</label>
-                                            <input type="text" class="form-control" id="fullname" name="fullname" value="<?php echo $row['fullname']; ?>">
+                                            <input type="text" class="form-control" id="fullname" name="fullname" value="<?php echo htmlspecialchars($row['fullname']); ?>">
                                         </div>
                                         <div class="mb-3">
                                             <label for="alamat" class="form-label">Address</label>
-                                            <input type="text" class="form-control" id="alamat" name="alamat" value="<?php echo $row['alamat']; ?>">
+                                            <input type="text" class="form-control" id="alamat" name="alamat" value="<?php echo isset($row['alamat']) ? htmlspecialchars($row['alamat']) : ''; ?>">
                                         </div>
                                         <div class="mb-3">
                                             <label for="no_hp" class="form-label">Phone Number</label>
-                                            <input type="text" class="form-control" id="no_hp" name="no_hp" value="<?php echo $row['no_hp']; ?>">
+                                            <input type="text" class="form-control" id="no_hp" name="no_hp" value="<?php echo isset($row['no_hp']) ? htmlspecialchars($row['no_hp']) : ''; ?>">
                                         </div>
-                                        <button type="submit" class="btn btn-primary">Update Profile</button>
+                                        <div class="form-group">
+                                            <button type="submit" class="btn btn-info"><i class="fas fa-square-pen"></i> Update Profile</button>
+                                            <button type="reset" class="btn btn-danger"><i class="fas fa-power-off"></i> Reset</button>
+                                        </div>
                                     </form>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                     <?php if ($status != 'Customer'): ?>
                     <div class="row mt-4">
                         <div class="col-md-12">
@@ -199,31 +220,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <h3 class="card-title">User List</h3>
                                 </div>
                                 <div class="card-body">
-                                    <table id="userTable" class="table table-bordered table-striped">
+                                    <table id="userTable" class="display table table-bordered table-striped table-hover responsive nowrap" style="width:100%">
                                         <thead>
                                             <tr>
                                                 <th>UserID</th>
                                                 <th>Username</th>
                                                 <th>Full Name</th>
+                                                <th>Address</th>
+                                                <th>Phone Number</th>
                                                 <th>Status</th>
-                                                <th>Actions</th>
+                                                <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php while ($user = mysqli_fetch_assoc($result)): ?>
-                                                <tr>
-                                                    <td><?php echo $user['userid']; ?></td>
-                                                    <td><?php echo $user['username']; ?></td>
-                                                    <td><?php echo $user['fullname']; ?></td>
-                                                    <td><?php echo $user['status']; ?></td>
-                                                    <td>
-                                                        <a href="edit_user.php?userid=<?php echo $user['userid']; ?>" class="btn btn-sm btn-primary">Edit</a>
-                                                        <?php if ($status == 'Admin'): ?>
-                                                            <a href="delete_user.php?userid=<?php echo $user['userid']; ?>" class="btn btn-sm btn-danger">Delete</a>
-                                                        <?php endif; ?>
-                                                    </td>
-                                                </tr>
-                                            <?php endwhile; ?>
+                                            <?php
+                                            $user_query = "SELECT * FROM `users`";
+                                            $user_result = mysqli_query($koneklocalhost, $user_query);
+                                            $nomorUrutTerakhir = 1;
+                                            while ($user = mysqli_fetch_assoc($user_result)) {
+                                                echo '<tr>';
+                                                echo "<td style='text-align:center; width: 2px; font-size: 10pt; white-space: normal;'>" . $nomorUrutTerakhir . "</td>";
+                                                // echo '<td>' . htmlspecialchars($user['userid']) . '</td>';
+                                                echo '<td>' . htmlspecialchars($user['username']) . '</td>';
+                                                echo '<td>' . htmlspecialchars($user['fullname']) . '</td>';
+                                                echo '<td>' . htmlspecialchars($user['alamat']) . '</td>';
+                                                echo '<td>' . htmlspecialchars($user['no_hp']) . '</td>';
+                                                echo '<td>' . htmlspecialchars($user['status']) . '</td>';
+                                                echo '<td>
+                                                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#editModal" data-userid="' . htmlspecialchars($user['userid']) . '" data-fullname="' . htmlspecialchars($user['fullname']) . '" data-alamat="' . htmlspecialchars($user['alamat']) . '" data-no_hp="' . htmlspecialchars($user['no_hp']) . '">Edit</button>
+                                                    <form method="POST" style="display:inline;">
+                                                        <input type="hidden" name="userid" value="' . htmlspecialchars($user['userid']) . '">
+                                                        <button type="submit" name="delete_user" class="btn btn-sm btn-danger" onclick="return confirm(\'Are you sure you want to delete this user?\');">Delete</button>
+                                                    </form>
+                                                </td>';
+                                                $nomorUrutTerakhir++;
+                                                echo '</tr>';
+                                            }
+                                            ?>
                                         </tbody>
                                     </table>
                                 </div>
@@ -231,6 +264,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                     </div>
                     <?php endif; ?>
+                </div>
+
+                <!-- Modal untuk Edit Profile -->
+                <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editModalLabel">Edit User</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                <div class="modal-body">
+                                    <input type="hidden" id="edit_userid" name="userid">
+                                    <div class="mb-3">
+                                        <label for="edit_fullname" class="form-label">Full Name</label>
+                                        <input type="text" class="form-control" id="edit_fullname" name="fullname">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="edit_alamat" class="form-label">Address</label>
+                                        <input type="text" class="form-control" id="edit_alamat" name="alamat">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="edit_no_hp" class="form-label">Phone Number</label>
+                                        <input type="text" class="form-control" id="edit_no_hp" name="no_hp">
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" name="update_profile" class="btn btn-primary">Save changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </main>
         </div>
@@ -242,6 +308,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.2/umd/popper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.1.0/js/adminlte.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <!-- Tambahkan Select2 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
@@ -254,6 +321,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
         });
     </script>
+    <script>
+        $(document).ready(function () {
+            $('#userTable').DataTable({
+                responsive: true,
+                scrollX: true,
+                searching: true,
+                lengthMenu: [10, 25, 50, 100, 500, 1000],
+                pageLength: 10,
+                dom: 'lBfrtip'
+            });
+        });
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var editModal = document.getElementById('editModal');
+        editModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var userid = button.getAttribute('data-userid');
+            var fullname = button.getAttribute('data-fullname');
+            var alamat = button.getAttribute('data-alamat');
+            var no_hp = button.getAttribute('data-no_hp');
 
+            var modalUserId = editModal.querySelector('#edit_userid');
+            var modalFullName = editModal.querySelector('#edit_fullname');
+            var modalAlamat = editModal.querySelector('#edit_alamat');
+            var modalNoHp = editModal.querySelector('#edit_no_hp');
+
+            modalUserId.value = userid;
+            modalFullName.value = fullname;
+            modalAlamat.value = alamat;
+            modalNoHp.value = no_hp;
+        });
+    });
+    </script>
 </body>
 </html>
