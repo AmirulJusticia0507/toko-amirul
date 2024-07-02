@@ -155,7 +155,7 @@ if (!isset($_SESSION['userid'])) {
                             <div class="icon">
                                 <i class="fas fa-file-alt"></i>
                             </div>
-                            <a href="cart.php?page=cart" class="small-box-footer">
+                            <a href="riwayattransaksi.php?page=riwayattransaksi" class="small-box-footer">
                                 My Orders <i class="fas fa-arrow-circle-right"></i>
                             </a>
                         </div>

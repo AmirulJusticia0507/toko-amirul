@@ -68,7 +68,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Lakukan tindakan lain yang diperlukan untuk proses pembayaran AmirulPay
 
                 // Redirect ke halaman sukses atau proses
-                header('Location: success.php');
+                header('Location: processpayment.php');
                 exit;
                 break;
             // Tambahkan case untuk metode pembayaran lain jika diperlukan
@@ -197,7 +197,8 @@ function calculateTotalAmount($cart_items) {
                                     <h5 class="card-title">Metode Pembayaran</h5>
                                 </div>
                                 <div class="card-body">
-                                    <form method="post">
+                                    <!-- Existing form in checkout.php -->
+                                    <form method="post" action="processpayment.php">
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="payment_method" id="payment_amirulpay" value="AmirulPay" checked>
                                             <label class="form-check-label" for="payment_amirulpay">
