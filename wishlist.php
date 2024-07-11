@@ -205,7 +205,3 @@ $koneklocalhost->close();
 
 </body>
 </html>
-<?php
-$stmt->close();
-$koneklocalhost->close();
-?>

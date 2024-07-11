@@ -216,12 +216,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>">
                                         <div class="mb-3">
                                             <label for="brand_name" class="form-label">Brand Name</label>
-                                            <input type="text" class="form-control" id="brand_name" name="brand_name" required>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                                                </div>
+                                                <input type="text" class="form-control" id="brand_name" name="brand_name" required>
+                                            </div>
                                         </div>
+
                                         <div class="mb-3">
                                             <label for="description" class="form-label">Description</label>
-                                            <textarea class="form-control" id="description" name="description"></textarea>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
+                                                </div>
+                                                <textarea class="form-control" id="description" name="description"></textarea>
+                                            </div>
                                         </div>
+
                                         <input type="hidden" id="brand_id" name="brand_id">
                                         <button type="submit" name="submit" class="btn btn-primary">Save Brand</button>
                                     </form>

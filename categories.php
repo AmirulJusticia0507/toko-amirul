@@ -217,14 +217,27 @@ if (isset($_POST['delete_category'])) {
                                     ?>
                                     <form action="" method="post">
                                         <input type="hidden" name="category_id" value="<?php echo $category_id; ?>">
+
                                         <div class="mb-3">
                                             <label for="category_name" class="form-label">Category Name</label>
-                                            <input type="text" class="form-control" id="category_name" name="category_name" value="<?php echo $category_name; ?>" required>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-list-alt"></i></span>
+                                                </div>
+                                                <input type="text" class="form-control" id="category_name" name="category_name" value="<?php echo $category_name; ?>" required>
+                                            </div>
                                         </div>
+
                                         <div class="mb-3">
                                             <label for="description" class="form-label">Description</label>
-                                            <textarea class="form-control" id="description" name="description"><?php echo $description; ?></textarea>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
+                                                </div>
+                                                <textarea class="form-control" id="description" name="description"><?php echo $description; ?></textarea>
+                                            </div>
                                         </div>
+
                                         <button type="submit" name="save_category" class="btn btn-primary">Save Category</button>
                                     </form>
                                 </div>

@@ -182,73 +182,119 @@ function cleanInput($input) {
                         <div class="card-body">
                             <form id="productForm" action="" method="post" enctype="multipart/form-data">
                                 <input type="hidden" id="product_id" name="product_id" value="<?php echo isset($product_id) ? $product_id : ''; ?>">
+
                                 <div class="form-group">
                                     <label for="product_name">Product Name</label>
-                                    <input type="text" class="form-control" id="product_name" name="product_name" value="<?php echo isset($product_name) ? $product_name : ''; ?>" required>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                                        </div>
+                                        <input type="text" class="form-control" id="product_name" name="product_name" value="<?php echo isset($product_name) ? $product_name : ''; ?>" required>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="description">Description</label>
-                                    <textarea class="form-control" id="description" name="description" required><?php echo isset($description) ? $description : ''; ?></textarea>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
+                                        </div>
+                                        <textarea class="form-control" id="description" name="description" required><?php echo isset($description) ? $description : ''; ?></textarea>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="price">Price</label>
-                                    <input type="number" class="form-control" id="price" name="price" step="0.01" value="<?php echo isset($price) ? $price : ''; ?>" required>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-rupiah-sign"></i></span>
+                                        </div>
+                                        <input type="number" class="form-control" id="price" name="price" step="0.01" value="<?php echo isset($price) ? $price : ''; ?>" required>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="stock_quantity">Stock Quantity</label>
-                                    <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" value="<?php echo isset($stock_quantity) ? $stock_quantity : ''; ?>" required>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-boxes"></i></span>
+                                        </div>
+                                        <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" value="<?php echo isset($stock_quantity) ? $stock_quantity : ''; ?>" required>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="category_id">Category</label>
-                                    <select class="form-control" id="category_id" name="category_id" required>
-                                        <option value="">Select Category</option>
-                                        <?php
-                                        $query = "SELECT * FROM categories";
-                                        $result = $koneklocalhost->query($query);
-                                        while ($row = $result->fetch_assoc()) {
-                                            $selected = isset($category_id) && $category_id == $row['category_id'] ? 'selected' : '';
-                                            echo "<option value='{$row['category_id']}' $selected>{$row['category_name']}</option>";
-                                        }
-                                        ?>
-                                    </select>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-list-alt"></i></span>
+                                        </div>
+                                        <select class="form-control" id="category_id" name="category_id" required>
+                                            <option value="">Select Category</option>
+                                            <?php
+                                            $query = "SELECT * FROM categories";
+                                            $result = $koneklocalhost->query($query);
+                                            while ($row = $result->fetch_assoc()) {
+                                                $selected = isset($category_id) && $category_id == $row['category_id'] ? 'selected' : '';
+                                                echo "<option value='{$row['category_id']}' $selected>{$row['category_name']}</option>";
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="brand_id">Brand</label>
-                                    <select class="form-control" id="brand_id" name="brand_id" required>
-                                        <option value="">Select Brand</option>
-                                        <?php
-                                        $query = "SELECT * FROM brands";
-                                        $result = $koneklocalhost->query($query);
-                                        while ($row = $result->fetch_assoc()) {
-                                            $selected = isset($brand_id) && $brand_id == $row['brand_id'] ? 'selected' : '';
-                                            echo "<option value='{$row['brand_id']}' $selected>{$row['brand_name']}</option>";
-                                        }
-                                        ?>
-                                    </select>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-industry"></i></span>
+                                        </div>
+                                        <select class="form-control" id="brand_id" name="brand_id" required>
+                                            <option value="">Select Brand</option>
+                                            <?php
+                                            $query = "SELECT * FROM brands";
+                                            $result = $koneklocalhost->query($query);
+                                            while ($row = $result->fetch_assoc()) {
+                                                $selected = isset($brand_id) && $brand_id == $row['brand_id'] ? 'selected' : '';
+                                                echo "<option value='{$row['brand_id']}' $selected>{$row['brand_name']}</option>";
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="status">Status</label>
-                                    <select class="form-control" id="status" name="status" required>
-                                        <option value="available" <?php echo isset($status) && $status == 'available' ? 'selected' : ''; ?>>Available</option>
-                                        <option value="out of stock" <?php echo isset($status) && $status == 'out of stock' ? 'selected' : ''; ?>>Out of Stock</option>
-                                        <option value="discontinued" <?php echo isset($status) && $status == 'discontinued' ? 'selected' : ''; ?>>Discontinued</option>
-                                    </select>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
+                                        </div>
+                                        <select class="form-control" id="status" name="status" required>
+                                            <option value="available" <?php echo isset($status) && $status == 'available' ? 'selected' : ''; ?>>Available</option>
+                                            <option value="out of stock" <?php echo isset($status) && $status == 'out of stock' ? 'selected' : ''; ?>>Out of Stock</option>
+                                            <option value="discontinued" <?php echo isset($status) && $status == 'discontinued' ? 'selected' : ''; ?>>Discontinued</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="weight">Weight (kg)</label>
-                                    <input type="number" class="form-control" id="weight" name="weight" step="0.01" value="<?php echo isset($weight) ? $weight : ''; ?>" required>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-weight"></i></span>
+                                        </div>
+                                        <input type="number" class="form-control" id="weight" name="weight" step="0.01" value="<?php echo isset($weight) ? $weight : ''; ?>" required>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="product_image">Product Image</label>
-                                    <input type="file" class="form-control-file" id="product_image" name="product_image" onchange="previewImage(this)">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-image"></i></span>
+                                        </div>
+                                        <input type="file" class="form-control-file" id="product_image" name="product_image" onchange="previewImage(this)">
+                                    </div>
                                     <small class="form-text text-muted">Accepted formats: JPG, JPEG, PNG</small>
                                     <div id="imagePreview" class="mt-2">
                                         <?php if (!empty($product_image)): ?>
@@ -258,6 +304,7 @@ function cleanInput($input) {
                                         <?php endif; ?>
                                     </div>
                                 </div>
+
                                 <?php if ($action == 'edit'): ?>
                                     <button type="submit" name="update" class="btn btn-Update">Update Product</button>
                                 <?php else: ?>
