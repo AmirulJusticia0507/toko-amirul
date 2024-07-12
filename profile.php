@@ -9,7 +9,7 @@ if (!isset($_SESSION['userid'])) {
 
 // Ambil informasi pengguna yang sedang login
 $userid = $_SESSION['userid'];
-$query = "SELECT * FROM `users` WHERE `userid` = '$userid'";
+$query = "SELECT *, NULL as photo_profile FROM `users` WHERE `userid` = '$userid'";
 $result = mysqli_query($koneklocalhost, $query);
 
 if (!$result) {
@@ -18,6 +18,11 @@ if (!$result) {
 
 $row = mysqli_fetch_assoc($result);
 $status = $row['status'];
+if (isset($row['photo_profile'])) {
+    $photo_profile = $row['photo_profile'];
+} else {
+    $photo_profile = null; // Handle the case where photo_profile is null or undefined
+}
 
 // Jika yang login adalah Customer, batasi hanya menampilkan data dirinya sendiri
 if ($status == 'Customer') {
@@ -40,14 +45,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
     $no_hp = mysqli_real_escape_string($koneklocalhost, $_POST['no_hp']);
     $edit_userid = mysqli_real_escape_string($koneklocalhost, $_POST['userid']);
 
-    // Query untuk update data profile
-    $update_query = "UPDATE `users` SET `fullname` = '$fullname', `alamat` = '$alamat', `no_hp` = '$no_hp' WHERE `userid` = '$edit_userid'";
-    $update_result = mysqli_query($koneklocalhost, $update_query);
+    // Upload foto profile jika ada yang diunggah
+    if (isset($_FILES['photo_profile']) && $_FILES['photo_profile']['error'] === UPLOAD_ERR_OK) {
+        $file_name = $_FILES['photo_profile']['name'];
+        $file_size = $_FILES['photo_profile']['size'];
+        $file_tmp = $_FILES['photo_profile']['tmp_name'];
+        $file_type = $_FILES['photo_profile']['type'];
 
-    if ($update_result) {
-        echo '<script>alert("Profile updated successfully!");</script>';
+        // Memeriksa ukuran file
+        if ($file_size > 10 * 1024 * 1024) { // 10 MB (1024 bytes = 1 KB)
+            echo '<script>alert("File size exceeds the limit of 10 MB.");</script>';
+        } else {
+            // Memeriksa tipe file
+            $allowed_types = array('image/jpeg', 'image/jpg', 'image/png');
+            if (in_array($file_type, $allowed_types)) {
+                // Direktori untuk menyimpan foto
+                $upload_path = 'uploads/profile_foto/';
+                $upload_file = $upload_path . basename($file_name);
+
+                // Memindahkan file yang diupload ke direktori yang ditentukan
+                if (move_uploaded_file($file_tmp, $upload_file)) {
+                    // Query untuk update data profile dengan foto
+                    $update_query = "UPDATE `users` SET `fullname` = '$fullname', `alamat` = '$alamat', `no_hp` = '$no_hp', `photo_profile` = '$upload_file' WHERE `userid` = '$edit_userid'";
+                    $update_result = mysqli_query($koneklocalhost, $update_query);
+
+                    if ($update_result) {
+                        echo '<script>alert("Profile updated successfully!");</script>';
+                    } else {
+                        echo '<script>alert("Failed to update profile. Please try again.");</script>';
+                    }
+                } else {
+                    echo '<script>alert("Failed to upload file.");</script>';
+                }
+            } else {
+                echo '<script>alert("Only JPG, JPEG, and PNG files are allowed.");</script>';
+            }
+        }
     } else {
-        echo '<script>alert("Failed to update profile. Please try again.");</script>';
+        // Query untuk update data profile tanpa foto
+        $update_query = "UPDATE `users` SET `fullname` = '$fullname', `alamat` = '$alamat', `no_hp` = '$no_hp' WHERE `userid` = '$edit_userid'";
+        $update_result = mysqli_query($koneklocalhost, $update_query);
+
+        if ($update_result) {
+            echo '<script>alert("Profile updated successfully!");</script>';
+        } else {
+            echo '<script>alert("Failed to update profile. Please try again.");</script>';
+        }
     }
 }
 
@@ -78,6 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -236,12 +280,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
                                                 <th>Address</th>
                                                 <th>Phone Number</th>
                                                 <th>Status</th>
+                                                <th>Photo Profile</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <?php
-                                            $user_query = "SELECT * FROM `users`";
+                                            $user_query = "SELECT *, NULL as photo_profile FROM `users`";
                                             $user_result = mysqli_query($koneklocalhost, $user_query);
                                             $nomorUrutTerakhir = 1;
                                             while ($user = mysqli_fetch_assoc($user_result)) {
@@ -253,6 +298,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
                                                 echo '<td>' . htmlspecialchars($user['alamat']) . '</td>';
                                                 echo '<td>' . htmlspecialchars($user['no_hp']) . '</td>';
                                                 echo '<td>' . htmlspecialchars($user['status']) . '</td>';
+                                                echo '<td>';
+                                                if (!empty($user['photo_profile'])) {
+                                                    // Display the photo profile with Fancybox if available
+                                                    $photo_path = $user['photo_profile'];
+                                                    echo '<a data-fancybox="gallery" href="' . $photo_path . '"><img src="' . $photo_path . '" class="img-thumbnail" style="width: 50px; height: auto;"></a>';
+                                                } else {
+                                                    echo 'No Photo';
+                                                }
+                                                echo '</td>';
                                                 echo '<td>
                                                     <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#editModal" data-userid="' . htmlspecialchars($user['userid']) . '" data-fullname="' . htmlspecialchars($user['fullname']) . '" data-alamat="' . htmlspecialchars($user['alamat']) . '" data-no_hp="' . htmlspecialchars($user['no_hp']) . '">Edit</button>
                                                     <form method="POST" style="display:inline;">
@@ -284,6 +338,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
                             <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
                                 <div class="modal-body">
                                     <input type="hidden" id="edit_userid" name="userid">
+                                    <!-- Input untuk upload foto -->
+                                    <div class="mb-3">
+                                        <label for="edit_photo_profile" class="form-label">Photo Profile</label>
+                                        <input type="file" class="form-control" id="edit_photo_profile" name="photo_profile">
+                                        <img src="" id="edit_photo_preview" class="mt-2" style="max-width: 200px; display: none;">
+                                        <button type="button" class="btn btn-sm btn-danger mt-2" id="edit_remove_photo" style="display: none;">Remove Photo</button>
+                                    </div>
                                     <div class="mb-3">
                                         <label for="edit_fullname" class="form-label">Full Name</label>
                                         <input type="text" class="form-control" id="edit_fullname" name="fullname">
@@ -341,26 +402,70 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_user'])) {
         });
     </script>
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var editModal = document.getElementById('editModal');
-        editModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget;
-            var userid = button.getAttribute('data-userid');
-            var fullname = button.getAttribute('data-fullname');
-            var alamat = button.getAttribute('data-alamat');
-            var no_hp = button.getAttribute('data-no_hp');
+        document.addEventListener('DOMContentLoaded', function () {
+            var editModal = document.getElementById('editModal');
+            var editPhotoInput = editModal.querySelector('#edit_photo_profile');
+            var editPhotoPreview = editModal.querySelector('#edit_photo_preview');
+            var editRemovePhotoBtn = editModal.querySelector('#edit_remove_photo');
 
-            var modalUserId = editModal.querySelector('#edit_userid');
-            var modalFullName = editModal.querySelector('#edit_fullname');
-            var modalAlamat = editModal.querySelector('#edit_alamat');
-            var modalNoHp = editModal.querySelector('#edit_no_hp');
+            editPhotoInput.addEventListener('change', function () {
+                var file = this.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        editPhotoPreview.src = e.target.result;
+                        editPhotoPreview.style.display = 'block';
+                        editRemovePhotoBtn.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
 
-            modalUserId.value = userid;
-            modalFullName.value = fullname;
-            modalAlamat.value = alamat;
-            modalNoHp.value = no_hp;
+            editRemovePhotoBtn.addEventListener('click', function () {
+                editPhotoPreview.src = '';
+                editPhotoPreview.style.display = 'none';
+                editRemovePhotoBtn.style.display = 'none';
+                editPhotoInput.value = ''; // Clear the file input
+            });
+
+            editModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var userid = button.getAttribute('data-userid');
+                var fullname = button.getAttribute('data-fullname');
+                var alamat = button.getAttribute('data-alamat');
+                var no_hp = button.getAttribute('data-no_hp');
+
+                var modalUserId = editModal.querySelector('#edit_userid');
+                var modalFullName = editModal.querySelector('#edit_fullname');
+                var modalAlamat = editModal.querySelector('#edit_alamat');
+                var modalNoHp = editModal.querySelector('#edit_no_hp');
+
+                modalUserId.value = userid;
+                modalFullName.value = fullname;
+                modalAlamat.value = alamat;
+                modalNoHp.value = no_hp;
+
+                // Reset photo preview and remove button on modal show
+                editPhotoPreview.src = '';
+                editPhotoPreview.style.display = 'none';
+                editRemovePhotoBtn.style.display = 'none';
+                editPhotoInput.value = ''; // Clear the file input
+            });
         });
-    });
     </script>
+    <script>
+        $(document).ready(function() {
+            $("[data-fancybox]").fancybox({
+                buttons: [
+                    "zoom",
+                    "slideShow",
+                    "thumbs",
+                    "close"
+                ],
+                loop: true
+            });
+        });
+    </script>
+
 </body>
 </html>
